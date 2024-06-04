@@ -7,6 +7,7 @@ use criterion::{BenchmarkId, Criterion};
 use fastrand::Rng;
 //use ref_cast::RefCast;
 
+extern crate alloc;
 use alloc::collections::BTreeSet;
 
 pub fn criterion_config() -> Criterion {

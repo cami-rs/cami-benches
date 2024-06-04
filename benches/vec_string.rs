@@ -1,3 +1,5 @@
+#![feature(trait_alias)]
+
 //#![allow(warnings, unused)]
 use cami::prelude::*;
 use core::{convert, iter};

@@ -6,11 +6,11 @@ edition = "2018"
 [features]
 alloc = ["cami/alloc"]
 deref_pure = ["cami/deref_pure"]
-std = ["cami/std"]
+std = ["alloc", "cami/std"]
 
 [dependencies]
 
-cami = { path = "../cami", version = "0.0.1", features = ["transmute", "debug"] }
+cami = { path = "../cami", version = "0.0.2", features = ["transmute", "debug"] }
 
 [dev-dependencies]
 # @TODO real_blackbox is on NIGHTLY only - is this depending on rustc channel?
