@@ -72,6 +72,8 @@ where
     const ALLOWS_MULTIPLE_EQUAL_ITEMS: bool;
     /// If `false`, [OutCollection::sort_unstable] may `panic!` (unsupported).
     const HAS_SORT_UNSTABLE: bool;
+    /// If `false`, [OutCollection::sort] may `panic!` (unsupported). Normally `true` in development with `std` or `alloc`.
+    const HAS_SORT: bool;
 
     /// Prefer [OutCollection::with_capacity] if possible.
     fn new() -> Self;
@@ -82,8 +84,6 @@ where
     fn iter<'a>(&'a self) -> impl Iterator<Item = &'a T>
     where
         T: 'a;
-    /// Not required - it may `panic`. @TODO revisit that
-    fn into_iter(self) -> impl Iterator<Item = T>;
 
     /// Like [Iterator::is_sorted]. BUT: For types that maintain/guarantee a sorted order, like
     /// [std::collections::BTreeSet], this must NOT (for example)
@@ -139,6 +139,7 @@ where
 {
     const ALLOWS_MULTIPLE_EQUAL_ITEMS: bool = true;
     const HAS_SORT_UNSTABLE: bool = true;
+    const HAS_SORT: bool = true;
 
     fn new() -> Self {
         Self(Vec::new(), PhantomData)
@@ -158,9 +159,6 @@ where
         T: 'a,
     {
         self.0.iter()
-    }
-    fn into_iter(self) -> impl Iterator<Item = T> {
-        self.0.into_iter()
     }
     fn is_sorted(&self) -> bool {
         self.0.is_sorted()
@@ -209,6 +207,7 @@ where
 {
     const ALLOWS_MULTIPLE_EQUAL_ITEMS: bool = false;
     const HAS_SORT_UNSTABLE: bool = false;
+    const HAS_SORT: bool = true;
 
     fn new() -> Self {
         Self(BTreeSet::new(), PhantomData)
@@ -229,9 +228,6 @@ where
     {
         self.0.iter()
     }
-    fn into_iter(self) -> impl Iterator<Item = T> {
-        self.0.into_iter()
-    }
     fn is_sorted(&self) -> bool {
         let iter = self.0.iter();
         hint::black_box(iter).is_sorted()
@@ -251,6 +247,92 @@ impl OutCollectionIndicator for OutCollectionBTreeSetIndicator {
 }
 // End of: BTreeSet-based collection
 
+// mut slice-based collection:
+/// This is for benchmarking `cami` without  `alloc` and `std` features, that is, for `no_std` & no
+/// `alloc`.
+///
+/// The actual benchmarking collection does use `Vec`. But, when it invokes `cami`, it does so by
+/// passing only a slice (mutable, where appropriate).
+#[derive(Clone)]
+#[repr(transparent)]
+pub struct OutCollectionSlice<'own, T>(pub Vec<T>, PhantomData<&'own ()>)
+where
+    T: Out + 'own;
+
+impl<'own, T> Extend<T> for OutCollectionSlice<'own, T>
+where
+    T: Out + 'own,
+{
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.0.extend(iter);
+    }
+    fn extend_one(&mut self, item: T) {
+        self.0.extend_one(item);
+    }
+    fn extend_reserve(&mut self, additional: usize) {
+        self.0.extend_reserve(additional);
+    }
+}
+impl<'own, T> OutCollectionSlice<'own, T>
+where
+    T: Out + 'own,
+{
+    fn slice(&self) -> &[T] {
+        &self.0
+    }
+
+    fn mut_slice(&mut self) -> &mut [T] {
+        &mut self.0
+    }
+}
+impl<'own, T> OutCollection<'own, T> for OutCollectionSlice<'own, T>
+where
+    T: Out + 'own,
+{
+    const ALLOWS_MULTIPLE_EQUAL_ITEMS: bool = true;
+    const HAS_SORT_UNSTABLE: bool = true;
+    const HAS_SORT: bool = false;
+
+    fn new() -> Self {
+        Self(Vec::new(), PhantomData)
+    }
+    fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity), PhantomData)
+    }
+    fn clear(&mut self) {
+        self.0.clear();
+    }
+
+    fn len(&self) -> usize {
+        self.slice().len()
+    }
+    fn iter<'a>(&'a self) -> impl Iterator<Item = &'a T>
+    where
+        T: 'a,
+    {
+        self.slice().iter()
+    }
+    fn is_sorted(&self) -> bool {
+        let iter = self.slice().iter();
+        hint::black_box(iter).is_sorted()
+    }
+    fn sort(&mut self) {
+        self.mut_slice().sort();
+    }
+    fn sort_unstable(&mut self) {
+        unreachable!();
+    }
+    fn binary_search(&self, x: &T) -> bool {
+        self.slice().binary_search(x).is_ok()
+    }
+}
+
+pub struct OutCollectionSliceIndicator();
+impl OutCollectionIndicator for OutCollectionSliceIndicator {
+    type OutCollectionImpl<'own, T> = OutCollectionSlice<'own, T> where T: Out + 'own;
+}
+// End of: mut slice-based collection
+
 type OutCollRetrieverPerItem<'own, OutCollectionIndicatorImpl, T> =
     <OutCollectionIndicatorImpl as OutCollectionIndicator>::OutCollectionImpl<'own, T>;
 
@@ -266,10 +348,8 @@ type OutCollRetriever<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImp
         OutCollectionIndicatorImpl,
         OutRetriever<'own, OutIndicatorIndicatorImpl, Sub>,
     >;
-// Previous `TransRef` is at
-// https://rust-lang.zulipchat.com/#narrow/stream/122651-general/topic/DropCk.20.26.20GAT.20.28Generic.20Associative.20Types.29
-
 //-----
+
 /// `Sub` means sub-item/component of [Out].
 pub trait OutIndicator<'own, Sub>
 where
