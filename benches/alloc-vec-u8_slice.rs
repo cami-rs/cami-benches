@@ -1,19 +1,13 @@
 #![feature(trait_alias)]
 #![feature(is_sorted)]
 #![feature(extend_one)]
-//#![cfg_attr(all(feature = "unsafe", feature = "nightly"), feature(anonymous_lifetime_in_impl_trait))]
-// https://github.com/rust-lang/rust/issues/52662
-//
-//#![cfg_attr(all(feature = "unsafe", feature = "nightly"), feature(associated_type_bounds))]
-//#![feature(type_alias_impl_trait)]
 
 //#![allow(warnings, unused)]
 use cami::prelude::*;
+use core::iter;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
 use lib_benches::*;
-
-extern crate alloc;
 
 #[path = "shared/lib_benches.rs"]
 mod lib_benches;
@@ -23,27 +17,35 @@ pub fn bench_target(c: &mut Criterion) {
 
     type IdState = ();
 
+    fn generate_item(rng: &mut Rng, total_length: &mut IdState) -> Vec<u8> {
+        let item_len = rng.usize(..MAX_ITEM_LEN);
+        let mut item = Vec::<u8>::with_capacity(item_len);
+        item.extend(iter::repeat_with(|| rng.u8(..)).take(item_len));
+        item
+    }
+
     fn id_postfix(_: &IdState) -> String {
-        String::with_capacity(0)
+        String::new()
     }
 
     let mut id_state: IdState = ();
-    //#[cfg(off)]
+
     bench_vec_sort_bin_search::<
+        Vec<u8>,
         u8,
-        u8,
-        OutIndicatorNonRefIndicator,
+        OutIndicatorSliceIndicator,
         OutCollectionVecIndicator,
         Rng,
         IdState,
     >(
         c,
         &mut rng,
-        "u8",
+        "u8slice",
         &mut id_state,
         id_postfix,
-        |rng, _| rng.u8(..),
-        |own| *own,
+        generate_item,
+        //|own| &own[..]
+        |own| &own[..],
     );
 }
 

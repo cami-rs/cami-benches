@@ -24,7 +24,7 @@ pub fn bench_target(c: &mut Criterion) {
     type IdState = ();
 
     fn id_postfix(_: &IdState) -> String {
-        String::with_capacity(0)
+        String::new()
     }
 
     let mut id_state: IdState = ();
