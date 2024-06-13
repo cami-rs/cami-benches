@@ -4,7 +4,8 @@
 
 Benchmarks of (public API only of) Rust crate [cami-rs/cami](https://github.com/cami-rs/cami).
 
-Currently benchmarks require `alloc` (but they run `no_std` part of Cami only).
+Currently benchmarks require `alloc` (but <!-- TODO: some of them do -->they CAN run `no_std` part of
+`cami` only).
 
 ## How to run
 
