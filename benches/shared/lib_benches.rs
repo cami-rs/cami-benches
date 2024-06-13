@@ -362,7 +362,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     Rnd: Random,
     IdState,
 >(
-    own_items: Vec<OwnType>,
+    mut own_items: Vec<OwnType>,
     c: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
@@ -372,10 +372,57 @@ pub fn bench_vec_sort_bin_search_own_items<
 ) {
     bench_vec_sort_bin_search_no_type_indicators::<
         '_,
-        '_,
+        //'_,
         OwnType,
         OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
         OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+        Rnd,
+        IdState,
+    >(
+        &mut own_items,
+        c,
+        rnd,
+        group_name,
+        id_state,
+        generate_id_postfix,
+        generate_out_item,
+    );
+}
+
+pub fn bench_vec_sort_bin_search_no_type_indicators<
+    'own, //: 'out,
+    //'out,
+    OwnType: Ord + 'own,
+    // No need for SubType here.
+    //
+    // Two "retrieved" types:
+    OutType: Out + 'own,
+    OutCollectionType: OutCollection<'own, OutType> + 'own,
+    // No need for type indicators here.
+    Rnd: Random,
+    IdState,
+>(
+    mut own_items: &'own mut Vec<OwnType>,
+    c: &mut Criterion,
+    rnd: &mut Rnd,
+    group_name: impl Into<String>,
+    id_state: &IdState,
+    generate_id_postfix: impl Fn(&IdState) -> String,
+    generate_out_item: impl Fn(&'own OwnType) -> OutType,
+) {
+    if !OutCollectionType::ALLOWS_MULTIPLE_EQUAL_ITEMS {
+        // Remove duplicates
+        let mut set = BTreeSet::<OwnType>::new();
+        set.extend(own_items.drain(..));
+        own_items.extend(set.into_iter());
+    }
+
+    bench_vec_sort_bin_search_lifetimed_ref::<
+        '_,
+        //'_,
+        OwnType,
+        OutType,
+        OutCollectionType,
         Rnd,
         IdState,
     >(
@@ -387,54 +434,6 @@ pub fn bench_vec_sort_bin_search_own_items<
         generate_id_postfix,
         generate_out_item,
     );
-}
-
-pub fn bench_vec_sort_bin_search_no_type_indicators<
-    'own: 'out,
-    'out,
-    OwnType: Ord + 'own,
-    // No need for SubType here.
-    //
-    // Two "retrieved" types:
-    OutType: Out + 'out,
-    OutCollectionType: OutCollection<'out, OutType> + 'own,
-    // No need for type indicators here.
-    Rnd: Random,
-    IdState,
->(
-    mut own_items: Vec<OwnType>,
-    c: &mut Criterion,
-    rnd: &mut Rnd,
-    group_name: impl Into<String>,
-    id_state: &IdState,
-    generate_id_postfix: impl Fn(&IdState) -> String,
-    generate_out_item: impl Fn(&'own OwnType) -> OutType,
-) {
-    if !OutCollectionType::ALLOWS_MULTIPLE_EQUAL_ITEMS {
-        // Remove duplicates.
-        let mut set = BTreeSet::<OwnType>::new();
-        set.extend(own_items.into_iter());
-        own_items = Vec::<OwnType>::with_capacity(set.len());
-        own_items.extend(set.into_iter());
-    }
-
-    /*bench_vec_sort_bin_search_lifetimed_ref::<
-        '_,
-        '_,
-        OwnType,
-        OutType,
-        OutCollectionType,
-        Rnd,
-        IdState,
-    >(
-        &own_items,
-        c,
-        rnd,
-        group_name,
-        id_state,
-        generate_id_postfix,
-        generate_out_item,
-    );*/
     // ^^^
 }
 
@@ -442,11 +441,11 @@ pub fn bench_vec_sort_bin_search_no_type_indicators<
 //
 // Having own_items: &'own Vec<OwnType>  FAILED to compile, even if generate_out_item was commented out.
 pub fn bench_vec_sort_bin_search_lifetimed_ref<
-    'own: 'out,
-    'out,
+    'own, //,: 'out,
+    //'out,
     OwnType: Ord + 'own,
-    OutType: Out + 'out,
-    OutCollectionType: OutCollection<'out, OutType> + 'own,
+    OutType: Out + 'own, //'out,
+    OutCollectionType: OutCollection<'own, OutType> + 'own,
     Rnd: Random,
     IdState,
 >(
@@ -474,10 +473,10 @@ pub fn bench_vec_sort_bin_search_lifetimed_ref<
         });
 
         fn generate_out_item_forward<
-            'ownsh: 'outsh,
-            'outsh,
+            'ownsh, //: 'outsh,
+            //'outsh,
             OwnishType: Ord + 'ownsh,
-            OutishType: Out + 'outsh,
+            OutishType: Out + 'ownsh,
         >(
             o: &'ownsh OwnishType,
         ) -> OutishType {
@@ -486,15 +485,15 @@ pub fn bench_vec_sort_bin_search_lifetimed_ref<
             loop {}
         }
         own_items.iter().for_each(|rf| {
-            generate_out_item_forward::<'own, 'out, OwnType, OutType>(rf);
+            generate_out_item_forward::<'own /*, 'out*/, OwnType, OutType>(rf);
         });
         //-------------
 
         fn generate_out_item_internal<
-            'ownsh: 'outsh,
-            'outsh,
+            'ownsh, //: 'outsh,
+            //'outsh,
             OwnishType: Ord + 'ownsh,
-            OutishType: Out + 'outsh,
+            OutishType: Out + 'ownsh,
         >(
             _o: &'ownsh OwnishType,
         ) -> OutishType {
@@ -623,29 +622,4 @@ pub fn bench_vec_sort_bin_search_lifetimed_ref<
         let _refs = refs;
     }
     group.finish();
-}
-
-//------
-pub fn caller<
-    'own: 'out,
-    'out,
-    OwnType: Ord + 'own,
-    OutType: Out + 'out,
-    OutCollectionType: OutCollection<'out, OutType> + 'own,
->(
-    mut own_items: Vec<OwnType>,
-) {
-    called::<'_, '_, OwnType, OutType, OutCollectionType>(&own_items);
-    // ^^^
-}
-
-pub fn called<
-    'own: 'out,
-    'out,
-    OwnType: Ord + 'own,
-    OutType: Out + 'out,
-    OutCollectionType: OutCollection<'out, OutType> + 'own,
->(
-    own_items: &'own Vec<OwnType>,
-) {
 }
