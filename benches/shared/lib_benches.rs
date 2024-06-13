@@ -370,7 +370,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     generate_id_postfix: impl Fn(&IdState) -> String,
     generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
 ) {
-    bench_vec_sort_bin_search_no_type_indicators::<
+    bench_vec_sort_bin_search_possibly_duplicates::<
         '_,
         //'_,
         OwnType,
@@ -389,7 +389,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     );
 }
 
-pub fn bench_vec_sort_bin_search_no_type_indicators<
+pub fn bench_vec_sort_bin_search_possibly_duplicates<
     'own, //: 'out,
     //'out,
     OwnType: Ord + 'own,
@@ -411,7 +411,7 @@ pub fn bench_vec_sort_bin_search_no_type_indicators<
     generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) {
     if !OutCollectionType::ALLOWS_MULTIPLE_EQUAL_ITEMS {
-        // Remove duplicates
+        // Remove duplicates. Yes, the result may have fewer items than planned/configured.
         let mut set = BTreeSet::<OwnType>::new();
         set.extend(own_items.drain(..));
         own_items.extend(set.into_iter());
@@ -437,9 +437,6 @@ pub fn bench_vec_sort_bin_search_no_type_indicators<
     // ^^^
 }
 
-// @TODO Rename/remove
-//
-// Having own_items: &'own Vec<OwnType>  FAILED to compile, even if generate_out_item was commented out.
 pub fn bench_vec_sort_bin_search_lifetimed_ref<
     'own, //,: 'out,
     //'out,
