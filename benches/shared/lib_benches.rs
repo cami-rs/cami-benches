@@ -469,38 +469,6 @@ pub fn bench_vec_sort_bin_search_ref<
             // ^^^
         });
 
-        fn generate_out_item_forward<
-            'ownsh, //: 'outsh,
-            //'outsh,
-            OwnishType: Ord + 'ownsh,
-            OutishType: Out + 'ownsh,
-        >(
-            o: &'ownsh OwnishType,
-        ) -> OutishType {
-            //generate_out_item(o);
-            // ^^ rustc --explain E0434
-            loop {}
-        }
-        own_items.iter().for_each(|rf| {
-            generate_out_item_forward::<'own /*, 'out*/, OwnType, OutType>(rf);
-        });
-        //-------------
-
-        fn generate_out_item_internal<
-            'ownsh, //: 'outsh,
-            //'outsh,
-            OwnishType: Ord + 'ownsh,
-            OutishType: Out + 'ownsh,
-        >(
-            _o: &'ownsh OwnishType,
-        ) -> OutishType {
-            loop {}
-        }
-        own_items.iter().for_each(|rf| {
-            generate_out_item_internal::<OwnType, OutType>(rf);
-        });
-        //-------------
-
         fn consume_own_ref<'ownsh, OwnishType: Ord + 'ownsh>(_o: &'ownsh OwnishType) {}
         own_items.iter().for_each(|rf| {
             consume_own_ref(rf);
