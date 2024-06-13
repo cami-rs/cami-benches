@@ -19,8 +19,29 @@ criterion = { version = "0.5.1" }
 
 fastrand = { version = "2.0.2"}
 
-# For benches:
+# TODO?
+#
 # ref-cast = "1.0"
+
+# Benches. KEEP them in alphabetical order.
+[[bench]]
+name = "btreeset_u8"
+harness = false
+required-features = ["alloc"]
+
+[[bench]]
+name = "shared"
+harness = false
+
+[[bench]]
+name = "vec_str"
+harness = false
+required-features = ["alloc"]
+
+[[bench]]
+name = "vec_string"
+harness = false
+required-features = ["alloc"]
 
 [[bench]]
 name = "vec_u8"
@@ -31,25 +52,6 @@ required-features = ["alloc"]
 name = "vec_u8slice"
 harness = false
 required-features = ["alloc"]
-
-[[bench]]
-name = "vec_string"
-harness = false
-required-features = ["alloc"]
-
-[[bench]]
-name = "vec_str"
-harness = false
-required-features = ["alloc"]
-
-[[bench]]
-name = "btreeset_u8"
-harness = false
-required-features = ["alloc"]
-
-[[bench]]
-name = "shared"
-harness = false
 
 [lints.rust]
 warnings = "allow"

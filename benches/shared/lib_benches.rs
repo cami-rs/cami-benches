@@ -40,7 +40,6 @@ impl Random for Rng {
     }
 }
 
-// @TODO "alloc" feature
 pub fn purge_cache<RND: Random>(rng: &mut RND) {
     let mut vec = Vec::<u8>::with_capacity(MAX_CACHE_SIZE);
 
@@ -585,9 +584,6 @@ pub fn bench_vec_sort_bin_search_ref<
                 |b, unsorted_items| {
                     b.iter(|| {
                         let sorted = hint::black_box(&sorted_non_lexi);
-                        // @TODO update this comment: no into_iter() here
-                        //
-                        // The following `unsorted_items.into_iter()` is cheap (no consuming of any `Vec`), because `unsorted_items`` is a reference to a Vec.
                         for item in hint::black_box(unsorted_items.iter()) {
                             #[cfg(feature = "transmute")]
                             let _ = {
