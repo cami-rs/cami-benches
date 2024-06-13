@@ -43,6 +43,11 @@ harness = false
 required-features = ["alloc"]
 
 [[bench]]
+name = "btreeset_u8"
+harness = false
+required-features = ["alloc"]
+
+[[bench]]
 name = "shared"
 harness = false
 
