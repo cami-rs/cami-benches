@@ -370,7 +370,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     generate_id_postfix: impl Fn(&IdState) -> String,
     generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
 ) {
-    bench_vec_sort_bin_search_possibly_duplicates::<
+    bench_vec_sort_bin_search_ref_possibly_duplicates::<
         '_,
         //'_,
         OwnType,
@@ -389,7 +389,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     );
 }
 
-pub fn bench_vec_sort_bin_search_possibly_duplicates<
+pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
     'own, //: 'out,
     //'out,
     OwnType: Ord + 'own,
@@ -417,7 +417,7 @@ pub fn bench_vec_sort_bin_search_possibly_duplicates<
         own_items.extend(set.into_iter());
     }
 
-    bench_vec_sort_bin_search_lifetimed_ref::<
+    bench_vec_sort_bin_search_ref::<
         '_,
         //'_,
         OwnType,
@@ -437,7 +437,7 @@ pub fn bench_vec_sort_bin_search_possibly_duplicates<
     // ^^^
 }
 
-pub fn bench_vec_sort_bin_search_lifetimed_ref<
+pub fn bench_vec_sort_bin_search_ref<
     'own, //,: 'out,
     //'out,
     OwnType: Ord + 'own,

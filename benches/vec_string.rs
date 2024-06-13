@@ -1,8 +1,10 @@
 #![feature(trait_alias)]
+#![feature(is_sorted)]
+#![feature(extend_one)]
 
 //#![allow(warnings, unused)]
 use cami::prelude::*;
-use core::{convert, iter};
+use core::iter;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
 use lib_benches::*;
@@ -32,14 +34,21 @@ pub fn bench_target(c: &mut Criterion) {
 
     let mut total_length: IdState = 0; // NOT in chars, but in bytes.
 
-    bench_vec_sort_bin_search(
+    bench_vec_sort_bin_search::<
+        String,
+        String,
+        OutIndicatorNonRefIndicator,
+        OutCollectionVecIndicator,
+        Rng,
+        IdState,
+    >(
         c,
         &mut rng,
         "string",
         &mut total_length,
         id_postfix,
         generate_item,
-        convert::identity,
+        |own| own.clone(),
     );
 }
 

@@ -9,30 +9,26 @@ use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
 use lib_benches::*;
 
-extern crate alloc;
-
 #[path = "shared/lib_benches.rs"]
 mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
     let mut rng = Rng::new();
 
-    type IdState = usize;
+    type IdState = ();
 
     fn generate_item(rng: &mut Rng, total_length: &mut IdState) -> Vec<u8> {
         let item_len = rng.usize(..MAX_ITEM_LEN);
         let mut item = Vec::<u8>::with_capacity(item_len);
         item.extend(iter::repeat_with(|| rng.u8(..)).take(item_len));
-
-        *total_length += item.len();
         item
     }
 
-    fn id_postfix(total_length: &IdState) -> String {
-        format!("Sum len: {total_length}.")
+    fn id_postfix(_: &IdState) -> String {
+        String::with_capacity(0)
     }
 
-    let mut total_length: IdState = 0;
+    let mut id_state: IdState = ();
 
     bench_vec_sort_bin_search::<
         Vec<u8>,
@@ -45,9 +41,10 @@ pub fn bench_target(c: &mut Criterion) {
         c,
         &mut rng,
         "u8slice",
-        &mut total_length,
+        &mut id_state,
         id_postfix,
         generate_item,
+        //|own| &own[..]
         |own| &own[..],
     );
 }
