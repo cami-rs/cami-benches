@@ -305,6 +305,25 @@ pub struct OutIndicatorSliceIndicator();
 impl OutIndicatorIndicator for OutIndicatorSliceIndicator {
     type OutIndicatorImpl<'own, T> = OutIndicatorSlice<T> where T: OutLifetimed<'own>;
 }
+
+//--
+//#[repr(transparent)]
+//pub struct
+
+pub struct OutIndicatorStr<Sub>(PhantomData<Sub>);
+/// `&str` is special, and so is this. Hence `Sub` is NOT used.
+impl<'own, Sub> OutIndicator<'own, Sub> for OutIndicatorStr<Sub>
+where
+    Sub: OutLifetimed<'own>,
+{
+    type OutLifetimedImpl = &'own str;
+}
+pub struct OutIndicatorStrIndicator();
+/// `&str` is special, and so is this. Hence `Sub` is NOT used.
+impl OutIndicatorIndicator for OutIndicatorStrIndicator {
+    type OutIndicatorImpl<'own, T> = OutIndicatorStr<T> where T: OutLifetimed<'own>;
+}
+
 //------
 
 /// `OwnType` needs to be [Ord] only if `generate_own_item` can generate (some) equal items AND if
