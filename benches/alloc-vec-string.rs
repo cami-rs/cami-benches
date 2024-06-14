@@ -2,7 +2,6 @@
 #![feature(is_sorted)]
 #![feature(extend_one)]
 
-//#![allow(warnings, unused)]
 use cami::prelude::*;
 use core::iter;
 use criterion::{criterion_group, Criterion};

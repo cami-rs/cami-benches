@@ -17,8 +17,9 @@ pub fn criterion_config() -> Criterion {
         .measurement_time(Duration::from_millis(1000))
 }
 
-// On heap.
+/// Min number of test items.
 pub const MIN_ITEMS: usize = 4; //10;
+/// Max. number of test items.
 pub const MAX_ITEMS: usize = 10; //100_000;
 
 #[allow(unused)]
@@ -26,7 +27,7 @@ pub const MAX_ITEMS: usize = 10; //100_000;
 /// size may be a few times higher.
 pub const MAX_ITEM_LEN: usize = 1_000;
 
-// For purging the L1, L2..., in bytes.
+/// For purging the L1, L2..., in bytes.
 const MAX_CACHE_SIZE: usize = 2_080_000;
 
 pub trait Random {
@@ -75,7 +76,8 @@ where
     const ALLOWS_MULTIPLE_EQUAL_ITEMS: bool;
     /// If `false`, [OutCollection::sort_unstable] may `panic!` (unsupported).
     const HAS_SORT_UNSTABLE: bool;
-    /// If `false`, [OutCollection::sort] may `panic!` (unsupported). Normally `true` in development with `std` or `alloc`.
+    /// If `false`, [OutCollection::sort] may `panic!` (unsupported). Normally `true` in development
+    /// with `std` or `alloc`.
     const HAS_SORT: bool;
 
     /// Prefer [OutCollection::with_capacity] if possible.
@@ -104,9 +106,11 @@ where
     /// If [OutCollection::HAS_SORT_UNSTABLE] is `false`, this method may `panic!`.
     fn sort_unstable(&mut self);
     // fn sort_by<F>(&mut self, compare: F) where F: FnMut(&T, &T) -> Ordering;
-    /// Binary search; return `true` if found an equal item (or key, in case of [alloc::collections::BTreeMap] and friends.)
+    /// Binary search; return `true` if found an equal item (or key, in case of
+    /// [alloc::collections::BTreeMap] and friends.)
     fn binary_search(&self, x: &T) -> bool;
-    //fn binary_search_by<'this, F>(&'this self, f: F) -> Result<usize, usize> where F: FnMut(&'this T) -> Ordering, T: 'this;
+    //fn binary_search_by<'this, F>(&'this self, f: F) -> Result<usize, usize> where F: FnMut(&'this
+    //T) -> Ordering, T: 'this;
 }
 
 pub trait OutCollectionIndicator {
@@ -115,7 +119,7 @@ pub trait OutCollectionIndicator {
         T: Out + 'own;
 }
 
-// Vec-based collection
+/// `Vec`-based collection
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct OutCollectionVec<'out, T>(pub Vec<T>, PhantomData<&'out ()>)
@@ -183,7 +187,7 @@ impl OutCollectionIndicator for OutCollectionVecIndicator {
 }
 // End of: Vec-based collection
 
-// BTreeSet-based collection:
+/// `BTreeSet`-based collection:
 #[derive(Clone)]
 #[repr(transparent)]
 pub struct OutCollectionBTreeSet<'own, T>(pub BTreeSet<T>, PhantomData<&'own ()>)
@@ -250,7 +254,8 @@ impl OutCollectionIndicator for OutCollectionBTreeSetIndicator {
 }
 // End of: BTreeSet-based collection
 
-// mut slice-based collection:
+/// mut slice-based collection.
+///
 /// This is for benchmarking `cami` without  `alloc` and `std` features, that is, for `no_std` & no
 /// `alloc`.
 ///
@@ -387,10 +392,6 @@ pub struct OutIndicatorSliceIndicator();
 impl OutIndicatorIndicator for OutIndicatorSliceIndicator {
     type OutIndicatorImpl<'own, T> = OutIndicatorSlice<T> where T: OutLifetimed<'own>;
 }
-
-//--
-//#[repr(transparent)]
-//pub struct
 
 pub struct OutIndicatorStr<Sub>(PhantomData<Sub>);
 /// `&str` is special, and so is this. Hence `Sub` is NOT used.
@@ -560,14 +561,12 @@ pub fn bench_vec_sort_bin_search_ref<
     {
         let unsorted_items = {
             let mut unsorted_items = OutCollectionType::with_capacity(own_items.len());
-            //unsorted_items.extend(own_items.iter().map(generate_out_item));
-            //                         ^^
+            //unsorted_items.extend(own_items.iter().map(generate_out_item)); ^^
             unsorted_items
         };
 
         own_items.iter().for_each(|rf| {
-            //generate_out_item(rf);
-            // ^^^
+            //generate_out_item(rf); ^^^
         });
 
         fn consume_own_ref<'ownsh, OwnishType: Ord + 'ownsh>(_o: &'ownsh OwnishType) {}
@@ -597,14 +596,15 @@ pub fn bench_vec_sort_bin_search_ref<
                 hint::black_box(&unsorted_items),
                 |b, unsorted_items| {
                     b.iter(|| {
-                        //sorted_lexi = hint::black_box(unsorted_items.clone());
-                        // @TODO ^^^--> .clone()  \----> change to:
+                        //sorted_lexi = hint::black_box(unsorted_items.clone()); @TODO ^^^-->
+                        // .clone()  \----> change to:
                         //
                         // .sorted_lexi.extend( it().map(|it_ref| it_ref.clone()))
                         sorted_lexi.clear();
                         sorted_lexi.extend(unsorted_items.iter().cloned());
 
-                        //sorted_lexi.sort_by(<OutItemIndicatorImpl as OutItemIndicator>::OutItemLifetimedImpl::cmp);
+                        //sorted_lexi.sort_by(<OutItemIndicatorImpl as
+                        //OutItemIndicator>::OutItemLifetimedImpl::cmp);
                         sorted_lexi.sort();
                     })
                 },
@@ -645,11 +645,12 @@ pub fn bench_vec_sort_bin_search_ref<
                     b.iter(|| {
                         #[cfg(feature = "transmute")]
                         let _ = {
-                            // @TODO replace .clone() by: Vec::with_capacity(), .iter() -> extend -> .into_vec_cami()
+                            // @TODO replace .clone() by: Vec::with_capacity(), .iter() -> extend ->
+                            // .into_vec_cami()
                             let unsorted_items = (*unsorted_items).clone();
 
-                            // @TODO TODO
-                            //sorted_non_lexi = hint::black_box(unsorted_items).into_vec().into_vec_cami();
+                            // @TODO TODO sorted_non_lexi =
+                            //hint::black_box(unsorted_items).into_vec().into_vec_cami();
                         };
                         #[cfg(not(feature = "transmute"))]
                         let _ = {

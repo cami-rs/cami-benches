@@ -7,7 +7,6 @@
 //#![cfg_attr(all(feature = "unsafe", feature = "nightly"), feature(associated_type_bounds))]
 //#![feature(type_alias_impl_trait)]
 
-//#![allow(warnings, unused)]
 use cami::prelude::*;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
