@@ -13,6 +13,8 @@ std = ["alloc", "cami/std"]
 cami = { path = "../cami", version = "0.0.2", features = ["transmute", "debug"] }
 
 [dev-dependencies]
+iai-callgrind = { version = "0.11.0", features = ['client_requests_defs'] }
+
 # @TODO real_blackbox is on NIGHTLY only - is this depending on rustc channel?
 # criterion = { version = "0.5.1", features=['real_blackbox'] }
 criterion = { version = "0.5.1" }
@@ -23,6 +25,9 @@ fastrand = { version = "2.0.2"}
 #
 # ref-cast = "1.0"
 
+[profile.bench]
+debug = true
+
 # Benches. KEEP them in alphabetical order.
 
 [[bench]]
@@ -32,6 +37,11 @@ required-features = ["alloc"]
 
 [[bench]]
 name = "alloc-vec-str"
+harness = false
+required-features = ["alloc"]
+
+[[bench]]
+name = "alloc-vec-str-criterion"
 harness = false
 required-features = ["alloc"]
 
@@ -59,4 +69,4 @@ name = "stack-slice-u8"
 harness = false
 
 [lints.rust]
-warnings = "allow"
+#warnings = "allow"

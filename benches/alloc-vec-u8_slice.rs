@@ -16,7 +16,7 @@ pub fn bench_target(c: &mut Criterion) {
 
     type IdState = ();
 
-    fn generate_item(rng: &mut Rng, total_length: &mut IdState) -> Vec<u8> {
+    fn generate_item(rng: &mut Rng, _id_state: &mut IdState) -> Vec<u8> {
         let item_len = rng.usize(..MAX_ITEM_LEN);
         let mut item = Vec::<u8>::with_capacity(item_len);
         item.extend(iter::repeat_with(|| rng.u8(..)).take(item_len));

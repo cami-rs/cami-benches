@@ -2,7 +2,7 @@
 // some items have `#[allow(unused)]`.
 use cami::prelude::*;
 use core::ops::RangeBounds;
-use core::{hint, marker::PhantomData, mem, time::Duration};
+use core::{hint, marker::PhantomData, time::Duration};
 use criterion::{BenchmarkId, Criterion};
 use fastrand::Rng;
 //use ref_cast::RefCast;
@@ -216,7 +216,7 @@ where
     fn new() -> Self {
         Self(BTreeSet::new(), PhantomData)
     }
-    fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(_capacity: usize) -> Self {
         Self(BTreeSet::new(), PhantomData)
     }
     fn clear(&mut self) {
@@ -499,7 +499,7 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
     Rnd: Random,
     IdState,
 >(
-    mut own_items: &'own mut Vec<OwnType>,
+    own_items: &'own mut Vec<OwnType>,
     critty: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
@@ -539,18 +539,19 @@ pub fn bench_vec_sort_bin_search_ref<
     group_name: impl Into<String>,
     id_state: &IdState,
     generate_id_postfix: impl Fn(&IdState) -> String,
-    generate_out_item: impl Fn(&'own OwnType) -> OutType,
+    // @TODO _generate_out_item
+    _generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) {
     let mut group = critty.benchmark_group(group_name);
     {
         let unsorted_items = {
-            let mut unsorted_items = OutCollectionType::with_capacity(own_items.len());
+            let unsorted_items = OutCollectionType::with_capacity(own_items.len());
             //unsorted_items.extend(own_items.iter().map(generate_out_item)); ^^
             unsorted_items
         };
 
-        own_items.iter().for_each(|rf| {
-            //generate_out_item(rf); ^^^
+        own_items.iter().for_each(|_rf| { //@TODO?
+             //generate_out_item(rf); ^^^
         });
 
         fn consume_own_ref<'ownsh, OwnishType: Ord + 'ownsh>(_o: &'ownsh OwnishType) {}
@@ -609,7 +610,9 @@ pub fn bench_vec_sort_bin_search_ref<
         }
         {
             purge_cache(rnd);
-            #[cfg(not(feature = "transmute"))]
+            // @TODO cfg
+            //
+            //#[cfg(not(feature = "transmute"))]
             let unsorted_items = {
                 let mut unsorted_items_cami = Vec::with_capacity(unsorted_items.len());
                 unsorted_items_cami.extend(
@@ -626,6 +629,9 @@ pub fn bench_vec_sort_bin_search_ref<
                 hint::black_box(&unsorted_items),
                 |b, unsorted_items| {
                     b.iter(|| {
+                        // @TODO cfg
+                        //
+                        /*
                         #[cfg(feature = "transmute")]
                         let _ = {
                             // @TODO replace .clone() by: Vec::with_capacity(), .iter() -> extend ->
@@ -635,7 +641,10 @@ pub fn bench_vec_sort_bin_search_ref<
                             // @TODO TODO sorted_non_lexi =
                             //hint::black_box(unsorted_items).into_vec().into_vec_cami();
                         };
-                        #[cfg(not(feature = "transmute"))]
+                        */
+                        // @TODO cfg
+                        //
+                        // #[cfg(not(feature = "transmute"))]
                         let _ = {
                             sorted_non_lexi = hint::black_box(unsorted_items.clone());
                         };
@@ -652,12 +661,16 @@ pub fn bench_vec_sort_bin_search_ref<
                     b.iter(|| {
                         let sorted = hint::black_box(&sorted_non_lexi);
                         for item in hint::black_box(unsorted_items.iter()) {
-                            #[cfg(feature = "transmute")]
+                            // @TODO cfg
+                            //
+                            /*#[cfg(feature = "transmute")]
                             let _ = {
                                 hint::black_box(sorted.binary_search(item.into_ref_cami()))
                                     .unwrap();
-                            };
-                            #[cfg(not(feature = "transmute"))]
+                            };*/
+                            // @TODO cfg
+                            //
+                            //#[cfg(not(feature = "transmute"))]
                             let _ = {
                                 hint::black_box(sorted.binary_search(item)).unwrap();
                             };
