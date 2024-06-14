@@ -10,7 +10,7 @@
 use cami::prelude::*;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
-use lib_benches::*;
+use lib_benches::criterionish::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
 
 extern crate alloc;
 
@@ -27,7 +27,7 @@ pub fn bench_target(c: &mut Criterion) {
     }
 
     let mut id_state: IdState = ();
-    bench_vec_sort_bin_search::<
+    lib_benches::criterionish::bench_vec_sort_bin_search::<
         u8,
         u8,
         OutIndicatorNonRefIndicator,
@@ -47,7 +47,7 @@ pub fn bench_target(c: &mut Criterion) {
 
 criterion_group! {
     name = benches;
-    config = criterion_config();
+    config = lib_benches::criterionish::criterion_config();
     targets = bench_target
 }
 // Based on expansion of `criterion_main!(benches);`

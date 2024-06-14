@@ -36,7 +36,7 @@ harness = false
 required-features = ["alloc"]
 
 [[bench]]
-name = "alloc-vec-str"
+name = "alloc-vec-str-iai"
 harness = false
 required-features = ["alloc"]
 
