@@ -43,7 +43,6 @@ pub fn bench_target(c: &mut Criterion) {
         &mut id_state,
         id_postfix,
         generate_item,
-        //|own| &own[..]
         |own| &own[..],
     );
 }

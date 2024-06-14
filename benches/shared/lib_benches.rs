@@ -10,17 +10,18 @@ use fastrand::Rng;
 extern crate alloc;
 use alloc::collections::BTreeSet;
 
+/// Speed up. Why? This functionality is simple. It should warm up (flood the caches), and show a
+/// benefit, fast.
 pub fn criterion_config() -> Criterion {
-    // This functionality is simple. It should warm up (flood the caches), and show a benefit, fast.
     Criterion::default()
         .warm_up_time(Duration::from_millis(100))
         .measurement_time(Duration::from_millis(1000))
 }
 
 /// Min number of test items.
-pub const MIN_ITEMS: usize = 4; //10;
+pub const MIN_ITEMS: usize = 4;
 /// Max. number of test items.
-pub const MAX_ITEMS: usize = 10; //100_000;
+pub const MAX_ITEMS: usize = 10;
 
 #[allow(unused)]
 /// On heap. For example, for String, this is the maximum number of `char` - so the actual UTF-8
@@ -99,18 +100,14 @@ where
     /// Instead, it verifies the sorted order. For example: [std::collections::BTreeSet::iter] ->
     /// [core::hint::black_box] -> [Iterator::is_sorted].
     fn is_sorted(&self) -> bool;
-    //fn is_sorted_by<F>(&self, compare: F) -> bool where F: FnMut(&T, &T) -> bool;
     fn sort(&mut self);
     /// As per
     /// [`&[]::sort_unstable`](https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.sort_unstable).
     /// If [OutCollection::HAS_SORT_UNSTABLE] is `false`, this method may `panic!`.
     fn sort_unstable(&mut self);
-    // fn sort_by<F>(&mut self, compare: F) where F: FnMut(&T, &T) -> Ordering;
     /// Binary search; return `true` if found an equal item (or key, in case of
     /// [alloc::collections::BTreeMap] and friends.)
     fn binary_search(&self, x: &T) -> bool;
-    //fn binary_search_by<'this, F>(&'this self, f: F) -> Result<usize, usize> where F: FnMut(&'this
-    //T) -> Ordering, T: 'this;
 }
 
 pub trait OutCollectionIndicator {
@@ -474,7 +471,6 @@ pub fn bench_vec_sort_bin_search_own_items<
 ) {
     bench_vec_sort_bin_search_ref_possibly_duplicates::<
         '_,
-        //'_,
         OwnType,
         OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
         OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
@@ -492,15 +488,14 @@ pub fn bench_vec_sort_bin_search_own_items<
 }
 
 pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
-    'own, //: 'out,
-    //'out,
+    'own,
     OwnType: Ord + 'own,
-    // No need for SubType here.
+    // No need for SubType from this level deeper.
     //
     // Two "retrieved" types:
     OutType: Out + 'own,
     OutCollectionType: OutCollection<'own, OutType> + 'own,
-    // No need for type indicators here.
+    // No need for type indicators from this level deeper.
     Rnd: Random,
     IdState,
 >(
@@ -519,15 +514,7 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
         own_items.extend(set.into_iter());
     }
 
-    bench_vec_sort_bin_search_ref::<
-        '_,
-        //'_,
-        OwnType,
-        OutType,
-        OutCollectionType,
-        Rnd,
-        IdState,
-    >(
+    bench_vec_sort_bin_search_ref::<'_, OwnType, OutType, OutCollectionType, Rnd, IdState>(
         own_items,
         c,
         rnd,
@@ -536,14 +523,12 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
         generate_id_postfix,
         generate_out_item,
     );
-    // ^^^
 }
 
 pub fn bench_vec_sort_bin_search_ref<
-    'own, //,: 'out,
-    //'out,
+    'own,
     OwnType: Ord + 'own,
-    OutType: Out + 'own, //'out,
+    OutType: Out + 'own,
     OutCollectionType: OutCollection<'own, OutType> + 'own,
     Rnd: Random,
     IdState,
@@ -557,7 +542,6 @@ pub fn bench_vec_sort_bin_search_ref<
     generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) {
     let mut group = c.benchmark_group(group_name);
-    //#[cfg(off)]
     {
         let unsorted_items = {
             let mut unsorted_items = OutCollectionType::with_capacity(own_items.len());
@@ -623,7 +607,6 @@ pub fn bench_vec_sort_bin_search_ref<
                 },
             );
         }
-        //#[cfg(do_later)]
         {
             purge_cache(rnd);
             #[cfg(not(feature = "transmute"))]
