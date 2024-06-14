@@ -416,7 +416,7 @@ pub fn bench_vec_sort_bin_search<
     Rnd: Random,
     IdState,
 >(
-    c: &mut Criterion,
+    critty: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
     id_state: &mut IdState,
@@ -441,7 +441,7 @@ pub fn bench_vec_sort_bin_search<
         IdState,
     >(
         own_items,
-        c,
+        critty,
         rnd,
         group_name,
         id_state,
@@ -452,7 +452,7 @@ pub fn bench_vec_sort_bin_search<
 
 /// This removes any extra equal items from `own_items` if the indicated [OutCollection] has
 /// [OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS] being `false`. No guarantee as to which one of any
-/// two or more equal items will stay.
+/// two (or more) equal items will stay.
 pub fn bench_vec_sort_bin_search_own_items<
     OwnType: Ord,
     SubType: Out,
@@ -462,7 +462,7 @@ pub fn bench_vec_sort_bin_search_own_items<
     IdState,
 >(
     mut own_items: Vec<OwnType>,
-    c: &mut Criterion,
+    critty: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
     id_state: &IdState,
@@ -478,7 +478,7 @@ pub fn bench_vec_sort_bin_search_own_items<
         IdState,
     >(
         &mut own_items,
-        c,
+        critty,
         rnd,
         group_name,
         id_state,
@@ -500,7 +500,7 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
     IdState,
 >(
     mut own_items: &'own mut Vec<OwnType>,
-    c: &mut Criterion,
+    critty: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
     id_state: &IdState,
@@ -516,7 +516,7 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
 
     bench_vec_sort_bin_search_ref::<'_, OwnType, OutType, OutCollectionType, Rnd, IdState>(
         own_items,
-        c,
+        critty,
         rnd,
         group_name,
         id_state,
@@ -534,14 +534,14 @@ pub fn bench_vec_sort_bin_search_ref<
     IdState,
 >(
     own_items: &'own Vec<OwnType>,
-    c: &mut Criterion,
+    critty: &mut Criterion,
     rnd: &mut Rnd,
     group_name: impl Into<String>,
     id_state: &IdState,
     generate_id_postfix: impl Fn(&IdState) -> String,
     generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) {
-    let mut group = c.benchmark_group(group_name);
+    let mut group = critty.benchmark_group(group_name);
     {
         let unsorted_items = {
             let mut unsorted_items = OutCollectionType::with_capacity(own_items.len());
