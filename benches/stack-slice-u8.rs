@@ -8,9 +8,9 @@
 //#![feature(type_alias_impl_trait)]
 
 use cami::prelude::*;
-use criterion::{criterion_group, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use fastrand::Rng;
-use lib_benches::shared::{OutCollectionSliceIndicator, OutIndicatorNonRefIndicator};
+use lib_benches::outish::{OutCollectionSliceIndicator, OutIndicatorNonRefIndicator};
 
 extern crate alloc;
 
@@ -50,9 +50,4 @@ criterion_group! {
     config = lib_benches::criterionish::criterion_config();
     targets = bench_target
 }
-// Based on expansion of `criterion_main!(benches);`
-fn main() {
-    benches();
-
-    Criterion::default().configure_from_args().final_summary();
-}
+criterion_main!(benches);

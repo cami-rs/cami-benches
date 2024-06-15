@@ -10,7 +10,7 @@
 use cami::prelude::*;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
-use lib_benches::shared::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
+use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
 
 extern crate alloc;
 

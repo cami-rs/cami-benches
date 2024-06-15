@@ -4,9 +4,9 @@
 
 use cami::prelude::*;
 use core::iter;
-use criterion::{criterion_group, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use fastrand::Rng;
-use lib_benches::shared::{OutCollectionVecIndicator, OutIndicatorSliceIndicator, MAX_ITEM_LEN};
+use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorSliceIndicator, MAX_ITEM_LEN};
 
 //#[path = "shared/lib_benches.rs"]
 mod lib_benches;
@@ -52,9 +52,4 @@ criterion_group! {
     config = lib_benches::criterionish::criterion_config();
     targets = bench_target
 }
-// Based on expansion of `criterion_main!(benches);`
-fn main() {
-    benches();
-
-    Criterion::default().configure_from_args().final_summary();
-}
+criterion_main!(benches);

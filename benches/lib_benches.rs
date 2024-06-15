@@ -5,5 +5,8 @@ pub mod iaiish;
 #[path = "lib_benches/criterionish.rs"]
 pub mod criterionish;
 
+#[path = "lib_benches/outish.rs"]
+pub mod outish;
+
 #[path = "lib_benches/shared.rs"]
 pub mod shared;
