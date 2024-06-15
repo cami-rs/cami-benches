@@ -6,7 +6,8 @@ use cami::prelude::*;
 use core::iter;
 use criterion::{criterion_group, criterion_main, Criterion};
 use fastrand::Rng;
-use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorStrIndicator, MAX_ITEM_LEN};
+use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorStrIndicator};
+use lib_benches::shared::MAX_ITEM_LEN;
 
 //#[path = "shared/lib_benches.rs"]
 mod lib_benches;

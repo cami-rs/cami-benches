@@ -2,6 +2,8 @@ use alloc::collections::BTreeSet;
 use cami::CamiOrd;
 use core::marker::PhantomData;
 
+extern crate alloc;
+
 /// Shortcut trait, for "output" items based on owned items, but with no specified lifetime.
 pub trait Out = Clone + CamiOrd + Ord;
 /// Shortcut trait, for "output" items based on owned items, with a lifetime.

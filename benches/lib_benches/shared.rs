@@ -10,6 +10,8 @@ use fastrand::Rng;
 
 use alloc::collections::BTreeSet;
 
+extern crate alloc;
+
 /// Min number of test items.
 pub const MIN_ITEMS: usize = 4;
 /// Max. number of test items.

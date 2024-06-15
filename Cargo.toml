@@ -14,15 +14,16 @@ std = ["alloc", "cami/std"]
 [dependencies]
 
 cami = { path = "../cami", version = "0.0.2", features = ["transmute", "debug"] }
+# criterion **could** be in [dev-dependencies], but [dev-dependencies] can't be "optional".
+criterion = { version = "0.5.1", optional = true }
 
 [dev-dependencies]
 iai-callgrind = { version = "0.11.0", features = ['client_requests_defs'] }
 
 # @TODO real_blackbox is on NIGHTLY only - is this depending on rustc channel?
 # criterion = { version = "0.5.1", features=['real_blackbox'] }
-criterion = { version = "0.5.1" }
 
-fastrand = { version = "2.0.2"}
+fastrand = { version = "2.0.2" }
 
 # TODO?
 #
@@ -36,36 +37,37 @@ debug = true
 [[bench]]
 name = "alloc-btreeset-u8"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "alloc-vec-str-iai"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "alloc-vec-str-criterion"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "alloc-vec-string"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "alloc-vec-u8_slice"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "alloc-vec-u8"
 harness = false
-required-features = ["alloc"]
+required-features = ["alloc", "criterion"]
 
 [[bench]]
 name = "stack-slice-u8"
 harness = false
+required-features = ["criterion"]
 
 [lints.rust]
 #warnings = "allow"
