@@ -470,7 +470,6 @@ pub fn bench_vec_sort_bin_search_own_items<
     generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
 ) {
     bench_vec_sort_bin_search_ref_possibly_duplicates::<
-        '_,
         OwnType,
         OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
         OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
@@ -514,7 +513,7 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
         own_items.extend(set.into_iter());
     }
 
-    bench_vec_sort_bin_search_ref::<'_, OwnType, OutType, OutCollectionType, Rnd, IdState>(
+    bench_vec_sort_bin_search_ref::<OwnType, OutType, OutCollectionType, Rnd, IdState>(
         own_items,
         critty,
         rnd,
