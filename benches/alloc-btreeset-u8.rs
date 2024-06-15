@@ -10,11 +10,11 @@
 use cami::prelude::*;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
-use lib_benches::criterionish::{OutCollectionBTreeSetIndicator, OutIndicatorNonRefIndicator};
+use lib_benches::shared::{OutCollectionBTreeSetIndicator, OutIndicatorNonRefIndicator};
 
 extern crate alloc;
 
-#[path = "shared/lib_benches.rs"]
+//#[path = "shared/lib_benches.rs"]
 mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
@@ -27,7 +27,7 @@ pub fn bench_target(c: &mut Criterion) {
     }
 
     let mut id_state: IdState = ();
-    lib_benches::criterionish::bench_vec_sort_bin_search::<
+    lib_benches::shared::bench_vec_sort_bin_search::<
         u8,
         u8,
         OutIndicatorNonRefIndicator,

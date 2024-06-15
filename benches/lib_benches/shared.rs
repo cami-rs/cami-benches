@@ -2,21 +2,13 @@
 // some items have `#[allow(unused)]`.
 use cami::prelude::*;
 use core::ops::RangeBounds;
-use core::{hint, marker::PhantomData, time::Duration};
+use core::{hint, marker::PhantomData};
 use criterion::{BenchmarkId, Criterion};
 use fastrand::Rng;
 //use ref_cast::RefCast;
 
 extern crate alloc;
 use alloc::collections::BTreeSet;
-
-/// Speed up. Why? This functionality is simple. It should warm up (flood the caches), and show a
-/// benefit, fast.
-pub fn criterion_config() -> Criterion {
-    Criterion::default()
-        .warm_up_time(Duration::from_millis(100))
-        .measurement_time(Duration::from_millis(1000))
-}
 
 /// Min number of test items.
 pub const MIN_ITEMS: usize = 4;

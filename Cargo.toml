@@ -3,6 +3,9 @@ name = "cami-benches"
 version = "0.1.0"
 edition = "2018"
 
+# this is so that `cargo bench` doesn't attempt to run lib_benches
+autobenches = false
+
 [features]
 alloc = ["cami/alloc"]
 deref_pure = ["cami/deref_pure"]
@@ -59,10 +62,6 @@ required-features = ["alloc"]
 name = "alloc-vec-u8"
 harness = false
 required-features = ["alloc"]
-
-[[bench]]
-name = "shared"
-harness = false
 
 [[bench]]
 name = "stack-slice-u8"

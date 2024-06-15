@@ -6,11 +6,9 @@ use cami::prelude::*;
 use core::iter;
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
-use lib_benches::criterionish::{
-    OutCollectionVecIndicator, OutIndicatorStrIndicator, MAX_ITEM_LEN,
-};
+use lib_benches::shared::{OutCollectionVecIndicator, OutIndicatorStrIndicator, MAX_ITEM_LEN};
 
-#[path = "shared/lib_benches.rs"]
+//#[path = "shared/lib_benches.rs"]
 mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
@@ -35,7 +33,7 @@ pub fn bench_target(c: &mut Criterion) {
 
     let mut total_length: IdState = 0; // NOT in chars, but in bytes.
 
-    lib_benches::criterionish::bench_vec_sort_bin_search::<
+    lib_benches::shared::bench_vec_sort_bin_search::<
         String,
         &str,
         OutIndicatorStrIndicator,
