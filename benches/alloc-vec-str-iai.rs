@@ -55,19 +55,16 @@ pub fn bench_target(c: &mut Criterion) {
     );
 }
 
-//@TODO type alias
-fn out() -> &'static DataOut<
-    'static,
-    &'static str,
-    OutCollectionVec<'static, &'static str>,
-    OutCollectionVec<'static, Cami<&'static str>>,
-> {
-    static OUT: OnceCell<DataOut<&str, OutCollectionVec<&str>, OutCollectionVec<Cami<&str>>>> =
+type OutType = &'static str;
+type OutTypeVec = Vec<OutType>;
+type OutCollectionVecStr = OutCollectionVec<'static, &'static str>;
+type OutCollectionVecCamiStr = OutCollectionVec<'static, Cami<&'static str>>;
+fn out() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectionVecCamiStr> {
+    static OUT: OnceCell<DataOut<&str, OutCollectionVecStr, OutCollectionVecCamiStr>> =
         OnceCell::new();
     OUT.get_or_init(|| {
-        //@TODO type alias
-        static OWN: OnceCell<Vec<&'static str>> = OnceCell::new();
-        let own = OWN.get_or_init(|| vec![]);
+        static OWN: OnceCell<OutTypeVec> = OnceCell::new();
+        let own = OWN.get_or_init(|| lib_benches::shared_iai::data_own(|rnd| ""));
 
         lib_benches::shared_iai::data_out(own, |item| *item)
     })

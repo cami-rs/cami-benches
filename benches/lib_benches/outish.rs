@@ -1,5 +1,5 @@
 use alloc::collections::BTreeSet;
-use cami::CamiOrd;
+use cami::{Cami, CamiOrd};
 use core::marker::PhantomData;
 
 extern crate alloc;
@@ -287,9 +287,7 @@ impl OutCollectionIndicator for OutCollectionSliceIndicator {
     type OutCollectionImpl<'own, T> = OutCollectionSlice<'own, T> where T: Out + 'own;
 }
 // End of: mut slice-based collection
-
-type OutCollRetrieverPerItem<'own, OutCollectionIndicatorImpl, T> =
-    <OutCollectionIndicatorImpl as OutCollectionIndicator>::OutCollectionImpl<'own, T>;
+//-----
 
 pub type OutRetriever<'own, OutIndicatorIndicatorImpl, Sub> =
     <<OutIndicatorIndicatorImpl as OutIndicatorIndicator>::OutIndicatorImpl<
@@ -297,11 +295,21 @@ pub type OutRetriever<'own, OutIndicatorIndicatorImpl, Sub> =
         Sub,
     > as OutIndicator<'own, Sub>>::OutLifetimedImpl;
 
+type OutCollRetrieverPerItem<'own, OutCollectionIndicatorImpl, T> =
+    <OutCollectionIndicatorImpl as OutCollectionIndicator>::OutCollectionImpl<'own, T>;
+
 pub type OutCollRetriever<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, Sub> =
     OutCollRetrieverPerItem<
         'own,
         OutCollectionIndicatorImpl,
         OutRetriever<'own, OutIndicatorIndicatorImpl, Sub>,
+    >;
+
+pub type OutCollRetrieverCami<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, Sub> =
+    OutCollRetrieverPerItem<
+        'own,
+        OutCollectionIndicatorImpl,
+        Cami<OutRetriever<'own, OutIndicatorIndicatorImpl, Sub>>,
     >;
 //-----
 

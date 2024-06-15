@@ -2,20 +2,25 @@
 // some items have `#[allow(unused)]`.
 use super::outish::*;
 use cami::prelude::*;
-use core::hint;
 use core::marker::PhantomData;
 use core::ops::RangeBounds;
 use fastrand::Rng;
+use std::hint;
 //use ref_cast::RefCast;
 
 use alloc::collections::BTreeSet;
 
 extern crate alloc;
 
+/// If calling [data_out] with [[OutCollection] that has[OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS]
+/// set to `true`, then [MIN_ITEMS_AFTER_REMOVING_DUPLICATES] is the minimum number of items
+/// required for benchmarking to continue. Otherwise we get a [panic].
+pub const MIN_ITEMS_AFTER_REMOVING_DUPLICATES: usize = 4;
+
 /// Min number of test items.
-pub const MIN_ITEMS: usize = 4;
+pub const MIN_ITEMS: usize = 40;
 /// Max. number of test items.
-pub const MAX_ITEMS: usize = 10;
+pub const MAX_ITEMS: usize = 10000;
 
 #[allow(unused)]
 /// On heap. For example, for String, this is the maximum number of `char` - so the actual UTF-8
@@ -26,11 +31,19 @@ pub const MAX_ITEM_LEN: usize = 1_000;
 const MAX_CACHE_SIZE: usize = 2_080_000;
 
 pub trait Random {
+    /// We create one instance per set of compared benchmarks. We don't re-use the same instance for
+    /// all benchmarks, because we'd need mutable access to such instance, and that's tricky with
+    /// `iai-callgrind`'s, `Criterion`'s or other harness's macros. That would prevent benchmarking
+    /// in parallel.
+    fn new() -> Self;
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8;
     fn usize(&mut self, range: impl RangeBounds<usize>) -> usize;
 }
 
 impl Random for Rng {
+    fn new() -> Self {
+        Rng::new()
+    }
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8 {
         Rng::u8(self, range)
     }
@@ -39,13 +52,13 @@ impl Random for Rng {
     }
 }
 
-pub fn purge_cache<RND: Random>(rng: &mut RND) {
+pub fn purge_cache() {
     let mut vec = Vec::<u8>::with_capacity(MAX_CACHE_SIZE);
 
     for _ in [0..MAX_CACHE_SIZE] {
-        vec.push(rng.u8(..));
+        vec.push(core::hint::black_box(1));
     }
-    hint::black_box(vec);
+    core::hint::black_box(vec);
 }
 //------
 
@@ -60,197 +73,164 @@ pub fn purge_cache<RND: Random>(rng: &mut RND) {
 pub struct DataOut<
     'own,
     OutType: Out + 'own,
-    // @TODO try to remove trailing + 'own
-    OutCollectionClassic: OutCollection<'own, OutType> + 'own,
-    // @TODO try to remove trailing + 'own
-    OutCollectionCami: OutCollection<'own, Cami<OutType>> + 'own,
+    OutCollectionClassic: OutCollection<'own, OutType>,
+    OutCollectionCami: OutCollection<'own, Cami<OutType>>,
 > {
-    pub unsorted_vec_classic: Vec<&'own OutType>,
+    pub unsorted_vec_classic: Vec<OutType>,
 
     pub unsorted_col_classic: OutCollectionClassic,
-    /// "Classic" sorting (lexicographic)
+    /// "Classic" ordering (lexicographic)
     pub sorted_col_classic: OutCollectionClassic,
 
     pub unsorted_col_cami: OutCollectionCami,
+    /// Cami ordering (potentially non-lexicographic)
     pub sorted_col_cami: OutCollectionCami,
 
     // @TODO remove:
     pub unsorted_vec_cami: Vec<Cami<OutType>>,
+    // @TODO remove:
     /// Cami sorting (potentially non-lexicographic)
     pub sorted_vec_cami: Vec<Cami<OutType>>,
     _own: PhantomData<&'own ()>,
 }
 //------
 
-/// `OwnType` needs to be [Ord] only if `generate_own_item` can generate (some) equal items AND if
-/// the indicated [OutCollection] has [OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS] being `false`.
-pub fn bench_vec_sort_bin_search<
-    OwnType: Ord,
+pub fn bench<
+    OwnType,
     SubType: Out,
     OutIndicatorIndicatorImpl: OutIndicatorIndicator,
     OutCollectionIndicatorImpl: OutCollectionIndicator,
-    Rnd: Random,
-    IdState,
->(
-    rnd: &mut Rnd,
-    id_state: &mut IdState,
-    generate_id_postfix: impl Fn(&IdState) -> String,
-    generate_own_item: impl Fn(&mut Rnd, &mut IdState) -> OwnType,
-    generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
-) {
-    let num_items = rnd.usize(MIN_ITEMS..MAX_ITEMS);
-
-    let mut own_items = Vec::with_capacity(num_items);
-    for _ in 0..num_items {
-        let item = generate_own_item(rnd, id_state);
-        own_items.push(item);
-    }
-
-    bench_vec_sort_bin_search_own_items::<
-        OwnType,
-        SubType,
-        OutIndicatorIndicatorImpl,
-        OutCollectionIndicatorImpl,
-        Rnd,
-        IdState,
-    >(
-        own_items,
-        rnd,
-        id_state,
-        generate_id_postfix,
-        generate_out_item,
-    );
-}
-
-/// This removes any extra equal items from `own_items` if the indicated [OutCollection] has
-/// [OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS] being `false`. No guarantee as to which one of any
-/// two (or more) equal items will stay.
-pub fn bench_vec_sort_bin_search_own_items<
-    OwnType: Ord,
-    SubType: Out,
-    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
-    OutCollectionIndicatorImpl: OutCollectionIndicator,
-    Rnd: Random,
-    IdState,
 >(
     mut own_items: Vec<OwnType>,
-    rnd: &mut Rnd,
-    id_state: &IdState,
-    generate_id_postfix: impl Fn(&IdState) -> String,
     generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
 ) {
-    bench_vec_sort_bin_search_ref_possibly_duplicates::<
+    bench_with_col_types::<
         OwnType,
         OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
         OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-        Rnd,
-        IdState,
-    >(
-        &mut own_items,
-        rnd,
-        id_state,
-        generate_id_postfix,
-        generate_out_item,
-    );
+        OutCollRetrieverCami<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(&mut own_items, generate_out_item);
 }
 
-pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
-    'own,
-    OwnType: Ord + 'own,
-    // No need for SubType from this level deeper.
-    //
-    // Two "retrieved" types:
-    OutType: Out + 'own,
-    OutCollectionType: OutCollection<'own, OutType> + 'own,
-    // No need for type indicators from this level deeper.
-    Rnd: Random,
-    IdState,
->(
-    own_items: &'own mut Vec<OwnType>,
-    rnd: &mut Rnd,
-    id_state: &IdState,
-    generate_id_postfix: impl Fn(&IdState) -> String,
-    generate_out_item: impl Fn(&'own OwnType) -> OutType,
-) {
-    if !OutCollectionType::ALLOWS_MULTIPLE_EQUAL_ITEMS {
-        // Remove duplicates. Yes, the result may have fewer items than planned/configured.
-        let mut set = BTreeSet::<OwnType>::new();
-        set.extend(own_items.drain(..));
-        own_items.extend(set.into_iter());
+fn data_own_for_rnd<OwnType, Rnd: Random>(
+    generate_own_item: impl Fn(&mut Rnd) -> OwnType,
+) -> Vec<OwnType> {
+    let mut rnd = Rnd::new();
+    let num_items = rnd.usize(MIN_ITEMS..MAX_ITEMS);
+    let mut own_items = Vec::with_capacity(num_items);
+
+    for _ in 0..num_items {
+        let item = generate_own_item(&mut rnd);
+        own_items.push(item);
     }
-
-    bench_vec_sort_bin_search_ref::<OwnType, OutType, OutCollectionType, Rnd, IdState>(
-        own_items,
-        rnd,
-        id_state,
-        generate_id_postfix,
-        generate_out_item,
-    );
+    own_items
 }
 
+#[cfg(feature = "fastrand")]
+type RndChoice = Rng;
+#[cfg(not(feature = "fastrand"))]
+compile_error!("Currently we require 'fastrand' feature.");
+
+pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) -> Vec<OwnType> {
+    data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
+}
+
+/// This removes any extra equal `OwnType` items (duplicates), if the indicated [OutCollection] has
+/// [OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS] being `false`. No guarantee as to which one of any
+/// two (or more) equal items will stay.
 pub fn data_out<
     'own,
-    OwnType: Ord + 'own,
+    OwnType: 'own,
     OutType: Out + 'own,
-    // @TODO try to remove trailing + 'own
-    OutCollectionType: OutCollection<'own, OutType> + 'own,
-    // @TODO try to remove trailing + 'own
-    OutCollectionCami: OutCollection<'own, Cami<OutType>> + 'own,
+    OutCollectionType: OutCollection<'own, OutType>,
+    OutCollectionCami: OutCollection<'own, Cami<OutType>>,
 >(
     own_items: &'own Vec<OwnType>,
     generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) -> DataOut<'own, OutType, OutCollectionType, OutCollectionCami> {
-    let unsorted_col_classic = {
-        let mut unsorted = OutCollectionType::with_capacity(own_items.len());
+    let unsorted_vec_classic = {
+        let mut unsorted = Vec::<OutType>::with_capacity(own_items.len());
         unsorted.extend(own_items.iter().map(generate_out_item));
+
+        if !OutCollectionType::ALLOWS_MULTIPLE_EQUAL_ITEMS {
+            let unsorted_with_duplicates_len = unsorted.len();
+            // Remove duplicates. Yes, the result may have fewer items than planned/configured.
+            let mut set = BTreeSet::<OutType>::new();
+            set.extend(unsorted.drain(..));
+            unsorted.extend(set.into_iter());
+            if unsorted.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
+                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {own_items.len()} 'own' items, and {unsorted_with_duplicates_len} generated ('out'). But, after removing duplicates, there was only {unsorted.len()} items left! Re-run, change the limits, or investigate.");
+            }
+        }
+        unsorted
+    };
+
+    let unsorted_col_classic = {
+        let mut unsorted = OutCollectionType::with_capacity(unsorted_vec_classic.len());
+        unsorted.extend(unsorted_vec_classic.iter().cloned());
         unsorted
     };
 
     //@TODO into a separate function each
 
     let sorted_col_classic = {
-        let mut sorted = OutCollectionType::with_capacity(unsorted_col_classic.len());
-        sorted.extend(unsorted_col_classic.iter().cloned());
+        let mut sorted = unsorted_col_classic.clone();
         sorted.sort();
         sorted
     };
 
     let unsorted_vec_cami: Vec<Cami<OutType>> = {
-        let mut unsorted_cami = Vec::with_capacity(unsorted_col_classic.len());
+        let mut unsorted_cami = Vec::with_capacity(unsorted_vec_classic.len());
         unsorted_cami.extend(
-            unsorted_col_classic
+            unsorted_vec_classic
                 .iter()
-                .map(|v| Cami::<OutType>::new(v.clone())),
+                .cloned()
+                .map(Cami::<OutType>::new),
         );
         unsorted_cami
     };
+
+    let sorted_vec_cami: Vec<Cami<OutType>> = {
+        let mut sorted = unsorted_vec_cami.clone();
+        sorted.sort();
+        sorted
+    };
+
+    let unsorted_col_cami = {
+        let mut unsorted = OutCollectionCami::with_capacity(unsorted_vec_classic.len());
+        unsorted.extend(unsorted_vec_cami.iter().cloned());
+        unsorted
+    };
+
+    let sorted_col_cami = {
+        let mut sorted = unsorted_col_cami.clone();
+        sorted.sort();
+        sorted
+    };
+
     DataOut {
-        unsorted_vec_classic: panic!(),
+        unsorted_vec_classic,
 
         unsorted_col_classic,
         sorted_col_classic,
 
-        unsorted_col_cami: panic!(),
-        sorted_col_cami: panic!(),
+        unsorted_col_cami,
+        sorted_col_cami,
 
         unsorted_vec_cami,
-        sorted_vec_cami: panic!(),
+        sorted_vec_cami,
         _own: PhantomData,
     }
 }
 
-pub fn bench_vec_sort_bin_search_ref<
+pub fn bench_with_col_types<
     'own,
-    OwnType: Ord + 'own,
+    OwnType: 'own,
     OutType: Out + 'own,
-    OutCollectionType: OutCollection<'own, OutType> + 'own,
-    Rnd: Random,
-    IdState,
+    OutCollectionType: OutCollection<'own, OutType>,
+    OutCollectionTypeCami: OutCollection<'own, Cami<OutType>>,
 >(
     own_items: &'own Vec<OwnType>,
-    rnd: &mut Rnd,
-    id_state: &IdState,
-    generate_id_postfix: impl Fn(&IdState) -> String,
     generate_out_item: impl Fn(&'own OwnType) -> OutType,
 ) {
     let unsorted_items = {
@@ -259,11 +239,6 @@ pub fn bench_vec_sort_bin_search_ref<
         unsorted_items
     };
 
-    let id_string = format!(
-        "{} items, each len max {MAX_ITEM_LEN}.{}",
-        own_items.len(),
-        generate_id_postfix(id_state)
-    );
     if false {
         let sorted_lexi =
         // @TODO bench
@@ -271,8 +246,8 @@ pub fn bench_vec_sort_bin_search_ref<
             let mut sorted_lexi = OutCollectionType::with_capacity(1);
             // "std sort lexi.          "
             let unsorted_items = &unsorted_items;
-            //sorted_lexi = hint::black_box(unsorted_items.clone()); @TODO ^^^-->
-            // .clone()  \----> change to:
+            //sorted_lexi = hint::black_box(unsorted_items.clone()); @TODO ^^^--> .clone()  \---->
+            // change to:
             //
             // .sorted_lexi.extend( it().map(|it_ref| it_ref.clone()))
             sorted_lexi.clear();
@@ -283,7 +258,7 @@ pub fn bench_vec_sort_bin_search_ref<
             sorted_lexi.sort();
             sorted_lexi
         };
-        purge_cache(rnd);
+        purge_cache();
 
         {
             // "std bin search (lexi)   "
@@ -293,7 +268,7 @@ pub fn bench_vec_sort_bin_search_ref<
                 assert!(hint::black_box(sorted.binary_search(&item)));
             }
         }
-        purge_cache(rnd);
+        purge_cache();
 
         {
             // If we can't transmute, then we clone().
@@ -337,7 +312,7 @@ pub fn bench_vec_sort_bin_search_ref<
                 };
                 sorted_non_lexi.sort();
             }
-            purge_cache(rnd);
+            purge_cache();
 
             {
                 // "std bin search (non-lexi)"
