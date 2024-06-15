@@ -7,8 +7,10 @@ use core::iter;
 use criterion::Criterion;
 use fastrand::Rng;
 use iai_callgrind::{library_benchmark, library_benchmark_group, main};
-use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorStrIndicator};
+use lib_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
 use lib_benches::shared::MAX_ITEM_LEN;
+use lib_benches::shared_iai::DataOut;
+use once_cell::sync::OnceCell;
 
 //#[path = "shared/lib_benches.rs"]
 mod lib_benches;
@@ -51,6 +53,24 @@ pub fn bench_target(c: &mut Criterion) {
         generate_item,
         |own| &own[..],
     );
+}
+
+//@TODO type alias
+fn out() -> &'static DataOut<
+    'static,
+    &'static str,
+    OutCollectionVec<'static, &'static str>,
+    OutCollectionVec<'static, Cami<&'static str>>,
+> {
+    static OUT: OnceCell<DataOut<&str, OutCollectionVec<&str>, OutCollectionVec<Cami<&str>>>> =
+        OnceCell::new();
+    OUT.get_or_init(|| {
+        //@TODO type alias
+        static OWN: OnceCell<Vec<&'static str>> = OnceCell::new();
+        let own = OWN.get_or_init(|| vec![]);
+
+        lib_benches::shared_iai::data_out(own, |item| *item)
+    })
 }
 
 #[library_benchmark]

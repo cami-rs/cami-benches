@@ -3,6 +3,7 @@
 use super::outish::*;
 use cami::prelude::*;
 use core::hint;
+use core::marker::PhantomData;
 use core::ops::RangeBounds;
 use fastrand::Rng;
 //use ref_cast::RefCast;
@@ -45,6 +46,39 @@ pub fn purge_cache<RND: Random>(rng: &mut RND) {
         vec.push(rng.u8(..));
     }
     hint::black_box(vec);
+}
+//------
+
+/// Some of the fields are equal to results of operations that themselves get benchmarked, too.
+/// However, none of these fields comes from a result of any benchmark, because
+/// - that would make benchmark files ugly, and
+/// - there is no guaranteed order of benchmarks, and
+/// - we'd have to turn off & on the measuring/capturing, and
+/// - we'd need a separate `static mut`, or `static ... : OnceCell<...>` variable for each...
+///
+/// So, all of these fields (except for `unsorted`) are "duplicates" - and that's OK.
+pub struct DataOut<
+    'own,
+    OutType: Out + 'own,
+    // @TODO try to remove trailing + 'own
+    OutCollectionClassic: OutCollection<'own, OutType> + 'own,
+    // @TODO try to remove trailing + 'own
+    OutCollectionCami: OutCollection<'own, Cami<OutType>> + 'own,
+> {
+    pub unsorted_vec_classic: Vec<&'own OutType>,
+
+    pub unsorted_col_classic: OutCollectionClassic,
+    /// "Classic" sorting (lexicographic)
+    pub sorted_col_classic: OutCollectionClassic,
+
+    pub unsorted_col_cami: OutCollectionCami,
+    pub sorted_col_cami: OutCollectionCami,
+
+    // @TODO remove:
+    pub unsorted_vec_cami: Vec<Cami<OutType>>,
+    /// Cami sorting (potentially non-lexicographic)
+    pub sorted_vec_cami: Vec<Cami<OutType>>,
+    _own: PhantomData<&'own ()>,
 }
 //------
 
@@ -154,6 +188,57 @@ pub fn bench_vec_sort_bin_search_ref_possibly_duplicates<
     );
 }
 
+pub fn data_out<
+    'own,
+    OwnType: Ord + 'own,
+    OutType: Out + 'own,
+    // @TODO try to remove trailing + 'own
+    OutCollectionType: OutCollection<'own, OutType> + 'own,
+    // @TODO try to remove trailing + 'own
+    OutCollectionCami: OutCollection<'own, Cami<OutType>> + 'own,
+>(
+    own_items: &'own Vec<OwnType>,
+    generate_out_item: impl Fn(&'own OwnType) -> OutType,
+) -> DataOut<'own, OutType, OutCollectionType, OutCollectionCami> {
+    let unsorted_col_classic = {
+        let mut unsorted = OutCollectionType::with_capacity(own_items.len());
+        unsorted.extend(own_items.iter().map(generate_out_item));
+        unsorted
+    };
+
+    //@TODO into a separate function each
+
+    let sorted_col_classic = {
+        let mut sorted = OutCollectionType::with_capacity(unsorted_col_classic.len());
+        sorted.extend(unsorted_col_classic.iter().cloned());
+        sorted.sort();
+        sorted
+    };
+
+    let unsorted_vec_cami: Vec<Cami<OutType>> = {
+        let mut unsorted_cami = Vec::with_capacity(unsorted_col_classic.len());
+        unsorted_cami.extend(
+            unsorted_col_classic
+                .iter()
+                .map(|v| Cami::<OutType>::new(v.clone())),
+        );
+        unsorted_cami
+    };
+    DataOut {
+        unsorted_vec_classic: panic!(),
+
+        unsorted_col_classic,
+        sorted_col_classic,
+
+        unsorted_col_cami: panic!(),
+        sorted_col_cami: panic!(),
+
+        unsorted_vec_cami,
+        sorted_vec_cami: panic!(),
+        _own: PhantomData,
+    }
+}
+
 pub fn bench_vec_sort_bin_search_ref<
     'own,
     OwnType: Ord + 'own,
@@ -174,24 +259,16 @@ pub fn bench_vec_sort_bin_search_ref<
         unsorted_items
     };
 
-    fn consume_own_ref<'ownsh, OwnishType: Ord + 'ownsh>(_o: &'ownsh OwnishType) {}
-    own_items.iter().for_each(|rf| {
-        consume_own_ref(rf);
-    });
-
-    own_items.iter().for_each(|rf| {
-        core::hint::black_box(rf);
-    });
-
     let id_string = format!(
         "{} items, each len max {MAX_ITEM_LEN}.{}",
         own_items.len(),
         generate_id_postfix(id_state)
     );
     if false {
-        let mut sorted_lexi = OutCollectionType::with_capacity(1);
+        let sorted_lexi =
         // @TODO bench
         {
+            let mut sorted_lexi = OutCollectionType::with_capacity(1);
             // "std sort lexi.          "
             let unsorted_items = &unsorted_items;
             //sorted_lexi = hint::black_box(unsorted_items.clone()); @TODO ^^^-->
@@ -204,7 +281,8 @@ pub fn bench_vec_sort_bin_search_ref<
             //sorted_lexi.sort_by(<OutItemIndicatorImpl as
             //OutItemIndicator>::OutItemLifetimedImpl::cmp);
             sorted_lexi.sort();
-        }
+            sorted_lexi
+        };
         purge_cache(rnd);
 
         {
@@ -223,7 +301,7 @@ pub fn bench_vec_sort_bin_search_ref<
             // @TODO cfg
             //
             //#[cfg(not(feature = "transmute"))]
-            let unsorted_items = {
+            let unsorted_items: Vec<Cami<OutType>> = {
                 let mut unsorted_items_cami = Vec::with_capacity(unsorted_items.len());
                 unsorted_items_cami.extend(
                     unsorted_items
@@ -250,6 +328,7 @@ pub fn bench_vec_sort_bin_search_ref<
                     //hint::black_box(unsorted_items).into_vec().into_vec_cami();
                 };
                 */
+
                 // @TODO cfg
                 //
                 // #[cfg(not(feature = "transmute"))]
