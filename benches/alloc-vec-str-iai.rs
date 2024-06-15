@@ -4,8 +4,9 @@
 
 use cami::prelude::*;
 use core::iter;
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::Criterion;
 use fastrand::Rng;
+use iai_callgrind::{library_benchmark, library_benchmark_group, main};
 use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorStrIndicator};
 use lib_benches::shared::MAX_ITEM_LEN;
 
@@ -52,9 +53,26 @@ pub fn bench_target(c: &mut Criterion) {
     );
 }
 
-criterion_group! {
-    name = benches;
-    config = lib_benches::criterionish::criterion_config();
-    targets = bench_target
+#[library_benchmark]
+#[bench::short(10)]
+#[bench::long(30)]
+#[bench::b1(0)]
+#[bench::b2(5)]
+fn bench1(value: u64) -> u64 {
+    core::hint::black_box(value)
 }
-criterion_main!(benches);
+
+#[library_benchmark]
+#[bench::b1()]
+#[bench::b2()]
+fn bench2() {
+    core::hint::black_box(1);
+}
+
+library_benchmark_group!(
+    name = bench_group;
+    compare_by_id = true;
+    benchmarks = bench1, bench2
+);
+
+main!(library_benchmark_groups = bench_group);

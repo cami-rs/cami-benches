@@ -10,3 +10,6 @@ pub mod outish;
 
 #[path = "lib_benches/shared.rs"]
 pub mod shared;
+
+#[path = "lib_benches/shared_iai.rs"]
+pub mod shared_iai;

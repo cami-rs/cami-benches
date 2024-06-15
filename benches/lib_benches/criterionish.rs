@@ -1,5 +1,5 @@
 use core::time::Duration;
-use criterion::{BenchmarkId, Criterion};
+use criterion::Criterion;
 
 /// Speed up. Why? This functionality is simple. It should warm up (flood the caches), and show a
 /// benefit, fast.
