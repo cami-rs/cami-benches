@@ -1,3 +1,4 @@
+#![feature(deref_pure_trait)]
 #![feature(trait_alias)]
 #![feature(is_sorted)]
 #![feature(extend_one)]
@@ -9,7 +10,7 @@ use fastrand::Rng;
 use iai_callgrind::{library_benchmark, library_benchmark_group, main};
 use lib_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
 use lib_benches::shared::MAX_ITEM_LEN;
-use lib_benches::shared_iai::DataOut;
+use lib_benches::shared_iai::*;
 use once_cell::sync::OnceCell;
 
 //#[path = "shared/lib_benches.rs"]
@@ -55,18 +56,24 @@ pub fn bench_target(c: &mut Criterion) {
     );
 }
 
+type OwnType = String;
+fn own() -> &'static Vec<OwnType> {
+    static OWN: OnceCell<Vec<OwnType>> = OnceCell::new();
+    OWN.get_or_init(|| lib_benches::shared_iai::data_own(|_rnd| "".to_owned()))
+}
+
 type OutType = &'static str;
 type OutTypeVec = Vec<OutType>;
 type OutCollectionVecStr = OutCollectionVec<'static, &'static str>;
 type OutCollectionVecCamiStr = OutCollectionVec<'static, Cami<&'static str>>;
+
 fn out() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectionVecCamiStr> {
     static OUT: OnceCell<DataOut<&str, OutCollectionVecStr, OutCollectionVecCamiStr>> =
         OnceCell::new();
     OUT.get_or_init(|| {
-        static OWN: OnceCell<OutTypeVec> = OnceCell::new();
-        let own = OWN.get_or_init(|| lib_benches::shared_iai::data_own(|_rnd| ""));
+        let own = own();
 
-        lib_benches::shared_iai::data_out(own, |item| *item)
+        lib_benches::shared_iai::data_out(own, |item| &item[..])
     })
 }
 

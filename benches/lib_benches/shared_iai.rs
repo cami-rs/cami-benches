@@ -3,7 +3,7 @@
 use super::outish::*;
 use cami::prelude::*;
 use core::marker::PhantomData;
-use core::ops::RangeBounds;
+use core::ops::{Deref, DerefPure, RangeBounds};
 use fastrand::Rng;
 use std::hint;
 //use ref_cast::RefCast;
@@ -85,6 +85,57 @@ pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) 
     data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
 }
 
+/// Stores (static, leaked) "own" & "out" data, where "out" potentially borrows from "own". When an
+/// instance (of this struct) is stored in a (`static`) [once_cell::sync::OnceCell], these two
+/// references add one level of indirection compare to having two separate (`static`)
+/// [once_cell::sync::OnceCell] instances (which would mean more synchronization). But we want
+/// simplicity.
+pub struct DataOwnAndOut<OwnType: 'static, OutType: Out + 'static> {
+    own: &'static [OwnType],
+    /// Unsorted.
+    out: &'static [OutType],
+}
+
+impl<OwnType: 'static, OutType: Out + 'static> DataOwnAndOut<OwnType, OutType> {
+    pub fn new(
+        generate_own_item: impl Fn(&mut RndChoice) -> OwnType,
+        generate_out_item: impl Fn(&'static OwnType) -> OutType,
+        allows_multiple_equal_items: bool
+    ) -> Self {
+        let own = data_own(generate_own_item).leak();
+
+        let mut out: Vec<OutType> = Vec::<OutType>::with_capacity(own.len());
+        out.extend(own.iter().map(generate_out_item));
+
+        if !allows_multiple_equal_items {
+            let len_including_duplicates = out.len();
+            // Remove duplicates. Yes, the result may have fewer items than planned/configured.
+            let mut set = BTreeSet::<OutType>::new();
+            set.extend(out.drain(..));
+            out.extend(set.into_iter());
+
+            if out.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
+                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {} 'own' items, and {len_including_duplicates} generated ('out'). But, after removing duplicates, there was only {} items left! Re-run, change the limits, or investigate.", own.len(), out.len());
+            }
+        }
+        let out = out.leak();
+        Self { own, out }
+    }
+}
+
+impl<OwnType: 'static, OutType: Out + 'static> Deref for DataOwnAndOut<OwnType, OutType> {
+    type Target = [OutType];
+
+    fn deref(&self) -> &[OutType] {
+        self.out
+    }
+}
+
+unsafe impl<OwnType: 'static, OutType: Out + 'static> DerefPure
+    for DataOwnAndOut<OwnType, OutType>
+{
+}
+
 /// Some of the fields are equal to results of operations that themselves get benchmarked, too.
 /// However, none of these fields comes from a result of any benchmark, because
 /// - that would make benchmark files ugly, and
@@ -118,15 +169,14 @@ pub struct DataOut<
 }
 
 pub type DataOutIndicated<
-    'own,
     SubType: Out,
     OutIndicatorIndicatorImpl: OutIndicatorIndicator,
     OutCollectionIndicatorImpl: OutCollectionIndicator,
 > = DataOut<
-    'own,
-    OutRetriever<'own, OutIndicatorIndicatorImpl, SubType>,
-    OutCollRetriever<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-    OutCollRetrieverCami<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    'static,
+    OutRetriever<'static, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetriever<'static, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetrieverCami<'static, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
 >;
 
 /// This removes any extra equal `OwnType` items (duplicates), if the indicated [OutCollection] has
@@ -152,6 +202,7 @@ pub fn data_out<
             let mut set = BTreeSet::<OutType>::new();
             set.extend(unsorted.drain(..));
             unsorted.extend(set.into_iter());
+
             if unsorted.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
                 panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {} 'own' items, and {unsorted_with_duplicates_len} generated ('out'). But, after removing duplicates, there was only {} items left! Re-run, change the limits, or investigate.", own_items.len(), unsorted.len());
             }
@@ -225,15 +276,11 @@ pub fn data_out_indicated<
 >(
     own_items: &'static Vec<OwnType>,
     generate_out_item: impl Fn(&'static OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
-) -> DataOut<
-    'static,
-    OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
-    OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-    OutCollRetrieverCami<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-> {
+) -> DataOutIndicated<SubType, OutIndicatorIndicatorImpl, OutCollectionIndicatorImpl> {
     data_out(own_items, generate_out_item)
 }
 
+//-----
 pub fn bench_indicated<
     OwnType,
     SubType: Out,

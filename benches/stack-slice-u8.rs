@@ -1,3 +1,4 @@
+#![feature(deref_pure_trait)]
 #![feature(trait_alias)]
 #![feature(is_sorted)]
 #![feature(extend_one)]
