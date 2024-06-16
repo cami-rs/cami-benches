@@ -6,6 +6,7 @@ use core::marker::PhantomData;
 use core::ops::{Deref, DerefPure, RangeBounds};
 use fastrand::Rng;
 use std::hint;
+use std::str::FromStr;
 //use ref_cast::RefCast;
 
 use alloc::collections::BTreeSet;
@@ -30,20 +31,32 @@ pub const MAX_ITEM_LEN: usize = 1_000;
 /// For purging the L1, L2..., in bytes.
 const MAX_CACHE_SIZE: usize = 2_080_000;
 
+/// We create one instance per set of compared benchmarks. We don't re-use the same instance for all
+/// benchmarks, because we'd need mutable access to such instance, and that's tricky with
+/// `iai-callgrind`'s, `Criterion`'s or other harness's macros. That would prevent benchmarking in
+/// parallel.
 pub trait Random {
-    /// We create one instance per set of compared benchmarks. We don't re-use the same instance for
-    /// all benchmarks, because we'd need mutable access to such instance, and that's tricky with
-    /// `iai-callgrind`'s, `Criterion`'s or other harness's macros. That would prevent benchmarking
-    /// in parallel.
+    type Seed: ToString + FromStr;
     fn new() -> Self;
+    fn with_seed(seed: Self::Seed) -> Self;
+    fn get_seed(&self) -> Self::Seed;
+
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8;
     fn usize(&mut self, range: impl RangeBounds<usize>) -> usize;
 }
 
 impl Random for Rng {
+    type Seed = u64;
     fn new() -> Self {
         Rng::new()
     }
+    fn with_seed(seed: u64) -> Self {
+        Rng::with_seed(seed)
+    }
+    fn get_seed(&self) -> u64 {
+        Rng::get_seed(self)
+    }
+
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8 {
         Rng::u8(self, range)
     }
@@ -100,7 +113,7 @@ impl<OwnType: 'static, OutType: Out + 'static> DataOwnAndOut<OwnType, OutType> {
     pub fn new(
         generate_own_item: impl Fn(&mut RndChoice) -> OwnType,
         generate_out_item: impl Fn(&'static OwnType) -> OutType,
-        allows_multiple_equal_items: bool
+        allows_multiple_equal_items: bool,
     ) -> Self {
         let own = data_own(generate_own_item).leak();
 
@@ -130,7 +143,6 @@ impl<OwnType: 'static, OutType: Out + 'static> Deref for DataOwnAndOut<OwnType, 
         self.out
     }
 }
-
 unsafe impl<OwnType: 'static, OutType: Out + 'static> DerefPure
     for DataOwnAndOut<OwnType, OutType>
 {

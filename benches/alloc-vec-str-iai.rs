@@ -63,11 +63,18 @@ fn own() -> &'static Vec<OwnType> {
 }
 
 type OutType = &'static str;
+
+fn out() -> &'static [OutType] {
+    static OUT_AND_OWN: OnceCell<DataOwnAndOut<OwnType, OutType>> = OnceCell::new();
+    &**OUT_AND_OWN
+        .get_or_init(|| DataOwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true))
+}
+
 type OutTypeVec = Vec<OutType>;
 type OutCollectionVecStr = OutCollectionVec<'static, &'static str>;
 type OutCollectionVecCamiStr = OutCollectionVec<'static, Cami<&'static str>>;
 
-fn out() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectionVecCamiStr> {
+fn out__() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectionVecCamiStr> {
     static OUT: OnceCell<DataOut<&str, OutCollectionVecStr, OutCollectionVecCamiStr>> =
         OnceCell::new();
     OUT.get_or_init(|| {
