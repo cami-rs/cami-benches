@@ -64,7 +64,7 @@ fn out() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectio
         OnceCell::new();
     OUT.get_or_init(|| {
         static OWN: OnceCell<OutTypeVec> = OnceCell::new();
-        let own = OWN.get_or_init(|| lib_benches::shared_iai::data_own(|rnd| ""));
+        let own = OWN.get_or_init(|| lib_benches::shared_iai::data_own(|_rnd| ""));
 
         lib_benches::shared_iai::data_out(own, |item| *item)
     })

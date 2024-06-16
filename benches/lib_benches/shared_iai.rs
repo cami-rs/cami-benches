@@ -93,24 +93,19 @@ pub struct DataOut<
     pub sorted_vec_cami: Vec<Cami<OutType>>,
     _own: PhantomData<&'own ()>,
 }
-//------
 
-pub fn bench<
-    OwnType,
+pub type DataOutIndicated<
+    'own,
     SubType: Out,
     OutIndicatorIndicatorImpl: OutIndicatorIndicator,
     OutCollectionIndicatorImpl: OutCollectionIndicator,
->(
-    mut own_items: Vec<OwnType>,
-    generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
-) {
-    bench_with_col_types::<
-        OwnType,
-        OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
-        OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-        OutCollRetrieverCami<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
-    >(&mut own_items, generate_out_item);
-}
+> = DataOut<
+    'own,
+    OutRetriever<'own, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetriever<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetrieverCami<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+>;
+//------
 
 fn data_own_for_rnd<OwnType, Rnd: Random>(
     generate_own_item: impl Fn(&mut Rnd) -> OwnType,
@@ -159,7 +154,7 @@ pub fn data_out<
             set.extend(unsorted.drain(..));
             unsorted.extend(set.into_iter());
             if unsorted.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
-                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {own_items.len()} 'own' items, and {unsorted_with_duplicates_len} generated ('out'). But, after removing duplicates, there was only {unsorted.len()} items left! Re-run, change the limits, or investigate.");
+                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {} 'own' items, and {unsorted_with_duplicates_len} generated ('out'). But, after removing duplicates, there was only {} items left! Re-run, change the limits, or investigate.", own_items.len(), unsorted.len());
             }
         }
         unsorted
@@ -221,6 +216,23 @@ pub fn data_out<
         sorted_vec_cami,
         _own: PhantomData,
     }
+}
+
+pub fn bench<
+    OwnType,
+    SubType: Out,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    mut own_items: Vec<OwnType>,
+    generate_out_item: impl Fn(&OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
+) {
+    bench_with_col_types::<
+        OwnType,
+        OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetrieverCami<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(&mut own_items, generate_out_item);
 }
 
 pub fn bench_with_col_types<
