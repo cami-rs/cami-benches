@@ -62,6 +62,29 @@ pub fn purge_cache() {
 }
 //------
 
+fn data_own_for_rnd<OwnType, Rnd: Random>(
+    generate_own_item: impl Fn(&mut Rnd) -> OwnType,
+) -> Vec<OwnType> {
+    let mut rnd = Rnd::new();
+    let num_items = rnd.usize(MIN_ITEMS..MAX_ITEMS);
+    let mut own_items = Vec::with_capacity(num_items);
+
+    for _ in 0..num_items {
+        let item = generate_own_item(&mut rnd);
+        own_items.push(item);
+    }
+    own_items
+}
+
+#[cfg(feature = "fastrand")]
+type RndChoice = Rng;
+#[cfg(not(feature = "fastrand"))]
+compile_error!("Currently we require 'fastrand' feature.");
+
+pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) -> Vec<OwnType> {
+    data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
+}
+
 /// Some of the fields are equal to results of operations that themselves get benchmarked, too.
 /// However, none of these fields comes from a result of any benchmark, because
 /// - that would make benchmark files ugly, and
@@ -105,30 +128,6 @@ pub type DataOutIndicated<
     OutCollRetriever<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
     OutCollRetrieverCami<'own, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
 >;
-//------
-
-fn data_own_for_rnd<OwnType, Rnd: Random>(
-    generate_own_item: impl Fn(&mut Rnd) -> OwnType,
-) -> Vec<OwnType> {
-    let mut rnd = Rnd::new();
-    let num_items = rnd.usize(MIN_ITEMS..MAX_ITEMS);
-    let mut own_items = Vec::with_capacity(num_items);
-
-    for _ in 0..num_items {
-        let item = generate_own_item(&mut rnd);
-        own_items.push(item);
-    }
-    own_items
-}
-
-#[cfg(feature = "fastrand")]
-type RndChoice = Rng;
-#[cfg(not(feature = "fastrand"))]
-compile_error!("Currently we require 'fastrand' feature.");
-
-pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) -> Vec<OwnType> {
-    data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
-}
 
 /// This removes any extra equal `OwnType` items (duplicates), if the indicated [OutCollection] has
 /// [OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS] being `false`. No guarantee as to which one of any
@@ -218,7 +217,24 @@ pub fn data_out<
     }
 }
 
-pub fn bench<
+pub fn data_out_indicated<
+    OwnType,
+    SubType: Out + 'static,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    own_items: &'static Vec<OwnType>,
+    generate_out_item: impl Fn(&'static OwnType) -> OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
+) -> DataOut<
+    'static,
+    OutRetriever<'_, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetriever<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    OutCollRetrieverCami<'_, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+> {
+    data_out(own_items, generate_out_item)
+}
+
+pub fn bench_indicated<
     OwnType,
     SubType: Out,
     OutIndicatorIndicatorImpl: OutIndicatorIndicator,
