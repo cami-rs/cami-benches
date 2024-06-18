@@ -13,20 +13,21 @@ deref_pure = ["cami/deref_pure"]
 std = ["alloc", "cami/std"]
 
 [dependencies]
+# All dependencies could just as well be in dev-dependencies. However, [dev-dependencies] can't be
+# "optional". So, to keep this tidy, we list all dependencies in [dependencies]:
 
 cami = { path = "../cami", version = "0.0.2", features = ["transmute", "debug"] }
 
-# criterion **could** be in [dev-dependencies], but [dev-dependencies] can't be "optional".
 criterion = { version = "0.5.1", optional = true }
+
+iai-callgrind = { version = "0.11.0", features = ['client_requests_defs'], optional = true }
+# iai-callgrind = { version = "0.11.0" }
 
 # For now this is the only random generator being used. But it's an optional dependency, so we can
 # switch to another easily. See our 'Random' trait.
 fastrand = { version = "2.0.2", optional = true  }
 
 once_cell = "1.19.0"
-
-[dev-dependencies]
-iai-callgrind = { version = "0.11.0", features = ['client_requests_defs'] }
 
 # TODO?
 #
@@ -45,7 +46,7 @@ required-features = ["alloc", "criterion"]
 [[bench]]
 name = "alloc-vec-str-iai"
 harness = false
-required-features = ["alloc", "criterion"]
+required-features = ["alloc"]
 
 [[bench]]
 name = "alloc-vec-str-criterion"
@@ -73,4 +74,4 @@ harness = false
 required-features = ["criterion"]
 
 [lints.rust]
-#warnings = "allow"
+warnings = "allow"

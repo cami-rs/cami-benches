@@ -7,7 +7,8 @@ Benchmarks of (public API only of) Rust crate [cami-rs/cami](https://github.com/
 ## Naming Conventions
 
 Name of eacmost benches has three parts, separated with `-`. The parts indicate:
-- whether it uses `alloc` (or not), or `std` (if it's `std`, that implies `alloc`). That pts benches into three groups:
+- whether it uses `alloc` (or not), or `std` (if it's `std`, that implies `alloc`). That pts benches
+  into three groups:
   - `stack-...`: `no_std`-compatible, and no allocation,
   - `alloc-...`: `no_std`-compatible, but requiring `alloc`,
   - `stdlb-`: requires `std`;
@@ -17,9 +18,10 @@ sorted or searched for - not necessarily the same kind of collection/storage as 
 - the item type.
 
 For example
-- [benches/alloc-vec-string.rs](benches/alloc-vec-string.rs) stores (owned) `String` instances in a `Vec`
-- [benches/alloc-vec-u8_slice.rs](benches/alloc-vec-u8_slice.rs) stores a (borrowed) `&[u8]` (slices of bytes,
-  `u8`), in a `Vec`.
+- [benches/alloc-vec-string.rs](benches/alloc-vec-string.rs) stores (owned) `String` instances in a
+  `Vec`
+- [benches/alloc-vec-u8_slice.rs](benches/alloc-vec-u8_slice.rs) stores a (borrowed) `&[u8]` (slices
+  of bytes, `u8`), in a `Vec`.
 - [benches/alloc-btreeset-u8.rs](alloc-btreeset-u8.rs) stores bytes (`u8`) in an
   [alloc::collections::BTreeSet](https://doc.rust-lang.org/nightly/alloc/collections/btree_set/struct.BTreeSet.html).
 
@@ -28,7 +30,7 @@ For example
 allocation-free functionality only.
 
 All benches use `iai-callgrind`, except for any legacy `Criterion`-based benches. Those have
-`-criterion` suffix.
+`-criterion` suffix. `iai-callgrind`
 
 ## How to run
 
@@ -43,7 +45,9 @@ Relevant features:
 - `std` - for `std-...` benches - currently: no `std` benches yet,
 - `deref_pure` is optional
 - `fastrand` is optional, but the only currently supported randomness generator - so, de-facto
-  required. 
+  required.
+- `iai-callgrind` is optional, but soon-to-be the only (then currently) supported benchmarking
+  harness - so, de-facto required.
 
 Invoke `cargo bench` or `cargo check --benches` like:
 ```bash

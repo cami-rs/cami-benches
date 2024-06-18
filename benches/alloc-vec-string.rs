@@ -9,7 +9,6 @@ use fastrand::Rng;
 use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
 use lib_benches::shared::MAX_ITEM_LEN;
 
-//#[path = "shared/lib_benches.rs"]
 mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
