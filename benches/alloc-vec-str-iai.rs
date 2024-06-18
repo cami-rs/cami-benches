@@ -1,4 +1,3 @@
-#![feature(deref_pure_trait)]
 #![feature(trait_alias)]
 #![feature(is_sorted)]
 #![feature(extend_one)]
@@ -57,23 +56,30 @@ pub fn bench_target(c: &mut Criterion) {
 }
 
 type OwnType = String;
-fn own() -> &'static Vec<OwnType> {
-    static OWN: OnceCell<Vec<OwnType>> = OnceCell::new();
-    OWN.get_or_init(|| lib_benches::shared_iai::data_own(|_rnd| "".to_owned()))
-}
 
 type OutType = &'static str;
 
-fn out() -> &'static [OutType] {
+fn own_and_out() -> &'static DataOwnAndOut<OwnType, OutType> {
     static OUT_AND_OWN: OnceCell<DataOwnAndOut<OwnType, OutType>> = OnceCell::new();
-    &**OUT_AND_OWN
-        .get_or_init(|| DataOwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true))
+    OUT_AND_OWN.get_or_init(|| DataOwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true))
 }
 
+fn own() -> &'static [OwnType] {
+    own_and_out().own
+}
+
+fn out() -> &'static [OutType] {
+    &own_and_out().out
+}
+
+/*
 type OutTypeVec = Vec<OutType>;
 type OutCollectionVecStr = OutCollectionVec<'static, &'static str>;
 type OutCollectionVecCamiStr = OutCollectionVec<'static, Cami<&'static str>>;
-
+fn _own() -> &'static Vec<OwnType> {
+    static OWN: OnceCell<Vec<OwnType>> = OnceCell::new();
+    OWN.get_or_init(|| lib_benches::shared_iai::data_own(|_rnd| "".to_owned()))
+}
 fn out__() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollectionVecCamiStr> {
     static OUT: OnceCell<DataOut<&str, OutCollectionVecStr, OutCollectionVecCamiStr>> =
         OnceCell::new();
@@ -82,7 +88,7 @@ fn out__() -> &'static DataOut<'static, OutType, OutCollectionVecStr, OutCollect
 
         lib_benches::shared_iai::data_out(own, |item| &item[..])
     })
-}
+}*/
 
 #[library_benchmark]
 #[bench::short(10)]

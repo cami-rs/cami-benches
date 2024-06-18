@@ -50,12 +50,21 @@ where
     /// Instead, it verifies the sorted order. For example: [std::collections::BTreeSet::iter] ->
     /// [core::hint::black_box] -> [Iterator::is_sorted].
     fn is_sorted(&self) -> bool;
+
     fn sort(&mut self);
     /// As per
     /// [`&[]::sort_unstable`](https://doc.rust-lang.org/nightly/core/primitive.slice.html#method.sort_unstable).
     /// If [OutCollection::HAS_SORT_UNSTABLE] is `false`, this method may `panic!`.
     fn sort_unstable(&mut self);
-    /// Binary search; return `true` if found an equal item (or key, in case of
+    /*fn sort_per_stability(&mut self, stable_sort: bool) {
+        if stable_sort {
+            self.sort();
+        } else {
+            self.sort_unstable();
+        }
+    }*/
+
+    /// Binary search; return `true` if found an equal item (or if found an equal key, in case of
     /// [alloc::collections::BTreeMap] and friends.)
     fn binary_search(&self, x: &T) -> bool;
 }

@@ -3,7 +3,7 @@
 use super::outish::*;
 use cami::prelude::*;
 use core::marker::PhantomData;
-use core::ops::{Deref, DerefPure, RangeBounds};
+use core::ops::RangeBounds;
 use fastrand::Rng;
 use std::hint;
 use std::str::FromStr;
@@ -97,6 +97,7 @@ compile_error!("Currently we require 'fastrand' feature.");
 pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) -> Vec<OwnType> {
     data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
 }
+//-------
 
 /// Stores (static, leaked) "own" & "out" data, where "out" potentially borrows from "own". When an
 /// instance (of this struct) is stored in a (`static`) [once_cell::sync::OnceCell], these two
@@ -104,9 +105,9 @@ pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) 
 /// [once_cell::sync::OnceCell] instances (which would mean more synchronization). But we want
 /// simplicity.
 pub struct DataOwnAndOut<OwnType: 'static, OutType: Out + 'static> {
-    own: &'static [OwnType],
+    pub own: &'static [OwnType],
     /// Unsorted.
-    out: &'static [OutType],
+    pub out: &'static [OutType],
 }
 
 impl<OwnType: 'static, OutType: Out + 'static> DataOwnAndOut<OwnType, OutType> {
@@ -136,7 +137,7 @@ impl<OwnType: 'static, OutType: Out + 'static> DataOwnAndOut<OwnType, OutType> {
     }
 }
 
-impl<OwnType: 'static, OutType: Out + 'static> Deref for DataOwnAndOut<OwnType, OutType> {
+/*impl<OwnType: 'static, OutType: Out + 'static> Deref for DataOwnAndOut<OwnType, OutType> {
     type Target = [OutType];
 
     fn deref(&self) -> &[OutType] {
@@ -146,7 +147,104 @@ impl<OwnType: 'static, OutType: Out + 'static> Deref for DataOwnAndOut<OwnType, 
 unsafe impl<OwnType: 'static, OutType: Out + 'static> DerefPure
     for DataOwnAndOut<OwnType, OutType>
 {
+}*/
+//------
+
+/// Collect and sort.
+pub fn lexi<
+    'out,
+    SubType: Out + 'out,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    out: &'out [OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>],
+) -> OutCollRetriever<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType> {
+    lexi_indicated::<
+        OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetriever<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(out, true)
 }
+/// Collect and sort unstable. If the collection doesn't support unstable sort, this may [panic].
+pub fn lexi_unstable<
+    'out,
+    SubType: Out + 'out,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    out: &'out [OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>],
+) -> OutCollRetriever<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType> {
+    lexi_indicated::<
+        OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetriever<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(out, false)
+}
+/// Collect. If the collection doesn't keep sorted order, then this does NOT sort.
+pub fn lexi_indicated<
+    'out,
+    OutType: Out + 'out,
+    OutCollectionLexi: OutCollection<'out, OutType>,
+>(
+    out: &'out [OutType],
+    stable_sort: bool,
+) -> OutCollectionLexi {
+    let mut col = OutCollectionLexi::with_capacity(out.len());
+    col.extend(out.iter().cloned());
+    if stable_sort {
+        col.sort();
+    } else {
+        col.sort_unstable();
+    }
+    col
+}
+
+/// Collect [Cami] wrapers around items and sort.
+pub fn cami<
+    'out,
+    SubType: Out + 'out,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    out: &'out [OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>],
+) -> OutCollRetrieverCami<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType> {
+    cami_indicated::<
+        OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetrieverCami<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(out, true)
+}
+/// Collect and sort unstable. If the collection doesn't support unstable sort, this may [panic].
+pub fn cami_unstable<
+    'out,
+    SubType: Out + 'out,
+    OutIndicatorIndicatorImpl: OutIndicatorIndicator,
+    OutCollectionIndicatorImpl: OutCollectionIndicator,
+>(
+    out: &'out [OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>],
+) -> OutCollRetrieverCami<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType> {
+    cami_indicated::<
+        OutRetriever<'out, OutIndicatorIndicatorImpl, SubType>,
+        OutCollRetrieverCami<'out, OutCollectionIndicatorImpl, OutIndicatorIndicatorImpl, SubType>,
+    >(out, false)
+}
+/// Collect. If the collection doesn't keep sorted order, then this does NOT sort.
+pub fn cami_indicated<
+    'out,
+    OutType: Out + 'out,
+    OutCollectionCami: OutCollection<'out, Cami<OutType>>,
+>(
+    out: &'out [OutType],
+    stable_sort: bool,
+) -> OutCollectionCami {
+    let mut col = OutCollectionCami::with_capacity(out.len());
+    col.extend(out.iter().cloned().map(Cami::new));
+    if stable_sort {
+        col.sort();
+    } else {
+        col.sort_unstable();
+    }
+    col
+}
+
+//------
 
 /// Some of the fields are equal to results of operations that themselves get benchmarked, too.
 /// However, none of these fields comes from a result of any benchmark, because
