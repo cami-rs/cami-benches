@@ -3,14 +3,17 @@
 #![feature(thread_id_value)]
 #![feature(trait_alias)]
 
+use crate::lib_benches::data::OwnAndOut;
+use crate::lib_benches::outish::{
+    OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator,
+};
+use crate::lib_benches::rnd::{RND_SEED_DEC, RND_SEED_HEX};
 use crate::lib_benches::shared;
+use crate::lib_benches::{col, shared_iai};
 use cami::prelude::*;
 use core::iter;
 use fastrand::Rng;
 use iai_callgrind::{library_benchmark, library_benchmark_group, main, LibraryBenchmarkConfig};
-use lib_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
-use lib_benches::shared::{DataOwnAndOut, MAX_ITEM_LEN};
-use lib_benches::shared_iai;
 use once_cell::sync::OnceCell;
 
 mod lib_benches;
@@ -18,17 +21,11 @@ mod lib_benches;
 type OwnType = String;
 type OutType = &'static str;
 
-fn own_and_out() -> &'static DataOwnAndOut<OwnType, OutType> {
-    eprintln!("own_and_out()");
-    eprintln!(
-        "process ID: {}, thread ID: {}",
-        std::process::id(),
-        std::thread::current().id().as_u64()
-    );
-    static OUT_AND_OWN: OnceCell<DataOwnAndOut<OwnType, OutType>> = OnceCell::new();
+fn own_and_out() -> &'static OwnAndOut<OwnType, OutType> {
+    static OUT_AND_OWN: OnceCell<OwnAndOut<OwnType, OutType>> = OnceCell::new();
     OUT_AND_OWN.get_or_init(|| {
         eprintln!("own_and_out() generating owned & out data");
-        DataOwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true)
+        OwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true)
     })
 }
 
@@ -43,58 +40,55 @@ fn out() -> &'static [OutType] {
 //------
 
 #[library_benchmark]
-#[bench::sort_stable()]
-fn sort_stable_lexi() {
-    core::hint::black_box(shared::lexi_stable::<
+#[bench::stable()]
+fn stable_lexi() -> OutCollectionVec<'static, &'static str> {
+    core::hint::black_box(col::lexi_stable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()));
+    >(out()))
 }
 
 #[library_benchmark]
-#[bench::sort_stable()]
-fn sort_stable_cami() {
-    core::hint::black_box(shared::cami_stable::<
+#[bench::stable()]
+fn stable_cami() -> OutCollectionVec<'static, Cami<&'static str>> {
+    core::hint::black_box(col::cami_stable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()));
+    >(out()))
 }
 //------
 
 #[library_benchmark]
-#[bench::sort_unstable()]
-fn sort_unstable_lexi() {
-    core::hint::black_box(shared::lexi_unstable::<
+#[bench::unstable()]
+fn unstable_lexi() {
+    let _result: &Vec<&str> = core::hint::black_box(col::lexi_unstable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()));
+    >(out()))
+    .as_vec_ref();
 }
 
 #[library_benchmark]
-#[bench::sort_unstable()]
-fn sort_unstable_cami() {
-    core::hint::black_box(shared::cami_unstable::<
+#[bench::unstable()]
+fn unstable_cami() {
+    let _result: &Vec<Cami<&str>> = core::hint::black_box(col::cami_unstable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()));
-}
-
-#[library_benchmark]
-fn return_result() -> String {
-    core::hint::black_box("from_ret.._res..".to_owned())
+    >(out()))
+    .as_vec_ref();
 }
 
 //------
 
 library_benchmark_group!(
     name = bench_group;
-    config = LibraryBenchmarkConfig::default().pass_through_envs(["RND_SEED_DEC", "RND_SEED_HEX"]);
+    config = LibraryBenchmarkConfig::default().pass_through_envs([RND_SEED_DEC, RND_SEED_HEX]);
     compare_by_id = true;
-    benchmarks = sort_stable_lexi, sort_stable_cami, sort_unstable_lexi, sort_unstable_cami, return_result
+    benchmarks = stable_lexi, stable_cami, unstable_lexi, unstable_cami
 );
 
 main!(library_benchmark_groups = bench_group);

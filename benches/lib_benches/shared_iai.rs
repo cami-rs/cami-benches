@@ -1,7 +1,7 @@
 // This file is used from various benches, and not all of them use all functionality from here. So,
 // some items have `#[allow(unused)]`.
 use super::outish::*;
-use crate::lib_benches::shared::MIN_ITEMS_AFTER_REMOVING_DUPLICATES;
+use crate::lib_benches::rnd::MIN_ITEMS_AFTER_REMOVING_DUPLICATES;
 use alloc::collections::BTreeSet;
 use cami::prelude::*;
 use core::marker::PhantomData;

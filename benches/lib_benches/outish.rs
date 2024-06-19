@@ -137,6 +137,16 @@ where
     }
 }
 
+impl<'own, T> OutCollectionVec<'own, T>
+where
+    T: Out + 'own,
+{
+    /// "Internal": for debugging only.
+    pub fn as_vec_ref(&self) -> &Vec<T> {
+        &self.0
+    }
+}
+
 pub struct OutCollectionVecIndicator();
 impl OutCollectionIndicator for OutCollectionVecIndicator {
     type OutCollectionImpl<'own, T> = OutCollectionVec<'own, T> where T: Out + 'own;
