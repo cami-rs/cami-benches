@@ -3,20 +3,15 @@
 #![feature(thread_id_value)]
 #![feature(trait_alias)]
 
-use crate::lib_benches::data::OwnAndOut;
-use crate::lib_benches::outish::{
-    OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator,
-};
-use crate::lib_benches::rnd::{RND_SEED_DEC, RND_SEED_HEX};
-use crate::lib_benches::shared;
-use crate::lib_benches::{col, shared_iai};
 use cami::prelude::*;
+use cami_benches::data::OwnAndOut;
+use cami_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
+use cami_benches::rnd::Random;
+use cami_benches::{col, shared_iai};
 use core::iter;
 use fastrand::Rng;
 use iai_callgrind::{library_benchmark, library_benchmark_group, main, LibraryBenchmarkConfig};
 use once_cell::sync::OnceCell;
-
-mod lib_benches;
 
 type OwnType = String;
 type OutType = &'static str;
@@ -25,7 +20,7 @@ fn own_and_out() -> &'static OwnAndOut<OwnType, OutType> {
     static OUT_AND_OWN: OnceCell<OwnAndOut<OwnType, OutType>> = OnceCell::new();
     OUT_AND_OWN.get_or_init(|| {
         eprintln!("own_and_out() generating owned & out data");
-        OwnAndOut::new(|_rnd| "".to_owned(), |string| &string[..], true)
+        OwnAndOut::new(|rnd| rnd.string(), |string| &string[..], true)
     })
 }
 
@@ -86,7 +81,7 @@ fn unstable_cami() {
 
 library_benchmark_group!(
     name = bench_group;
-    config = LibraryBenchmarkConfig::default().pass_through_envs([RND_SEED_DEC, RND_SEED_HEX]);
+    config = LibraryBenchmarkConfig::default().env_clear(false);
     compare_by_id = true;
     benchmarks = stable_lexi, stable_cami, unstable_lexi, unstable_cami
 );

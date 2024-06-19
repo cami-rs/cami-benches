@@ -1,30 +1,24 @@
 use core::num;
-//use crate::lib_benches::
 use core::ops::RangeBounds;
 use core::str::FromStr;
 #[cfg(feature = "fastrand")]
 use fastrand::Rng;
 
-/// If calling [data_out] with [[OutCollection] that has[OutCollection::ALLOWS_MULTIPLE_EQUAL_ITEMS]
-/// set to `true`, then [MIN_ITEMS_AFTER_REMOVING_DUPLICATES] is the minimum number of items
-/// required for benchmarking to continue. Otherwise we get a [panic].
-pub const MIN_ITEMS_AFTER_REMOVING_DUPLICATES: usize = 4;
-
-/// Min number of test items.
+/// Min number of test items (before removing duplicates).
 pub const MIN_ITEMS: usize = 500000;
 /// Max. number of test items.
 pub const MAX_ITEMS: usize = 5000000;
 
-/// On heap. For example, for String, this is the minimum number of `char`s - so the actual UTF-8
-/// size may be up to four times higher.
+/// Min length of an item (where an item itself is a [Vec], [String]...). For example, for String,
+/// this is the minimum number of `char`s - so the actual UTF-8 minimum length may be up to four
+/// times higher.
 pub const MIN_ITEM_LEN: usize = 1;
 
-/// On heap. For example, for String, this is the maximum number of `char`s - so the actual UTF-8
-/// size may be up to four times higher.
+/// Max length of an item (where an item itself is a [Vec], [String]...). For example, for String,
+/// this is the maximum number of `char`s - so the actual UTF-8 maximum length may be up to four
+/// times higher.
 pub const MAX_ITEM_LEN: usize = 1_000;
 
-/// For purging the L1, L2..., in bytes.
-const MAX_CACHE_SIZE: usize = 2_080_000;
 //------
 
 /// We create one instance per set of compared benchmarks. We don't re-use the same instance for all
@@ -34,7 +28,17 @@ const MAX_CACHE_SIZE: usize = 2_080_000;
 ///
 /// Therefore we require the user to provide a seed.
 pub trait Random {
+    /// Initiate with a seed. The seed is parsed from `seed`, which is in decimal representation.
+    /// (It comes from environment variable `RND_SEED_DEC`).
+    ///
+    /// The actual format of `seed` depends on the implementation (it may be one `u64`, multiple
+    /// `u64`'s separated by whitespace, or other.)
     fn with_seed_dec(seed: &str) -> Self;
+    /// Initiate with a seed. The seed is parsed from `seed`, which is in hexadecimal
+    /// representation. (It comes from environment variable `RND_SEED_HEX`).
+    ///
+    /// The actual format of `seed` depends on the implementation (it may be one `u64`, multiple
+    /// `u64`'s separated by whitespace, or other.)
     fn with_seed_hex(seed: &str) -> Self;
 
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8;

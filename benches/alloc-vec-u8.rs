@@ -8,14 +8,11 @@
 //#![feature(type_alias_impl_trait)]
 
 use cami::prelude::*;
+use cami_benches::outish::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
 use criterion::{criterion_group, Criterion};
 use fastrand::Rng;
-use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorNonRefIndicator};
 
 extern crate alloc;
-
-//#[path = "shared/lib_benches.rs"]
-mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
     let mut rng = Rng::new();

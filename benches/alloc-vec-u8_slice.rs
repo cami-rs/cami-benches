@@ -3,14 +3,11 @@
 #![feature(extend_one)]
 
 use cami::prelude::*;
+use cami_benches::outish::{OutCollectionVecIndicator, OutIndicatorSliceIndicator};
+use cami_benches::rnd::MAX_ITEM_LEN;
 use core::iter;
 use criterion::{criterion_group, criterion_main, Criterion};
 use fastrand::Rng;
-use lib_benches::outish::{OutCollectionVecIndicator, OutIndicatorSliceIndicator};
-use lib_benches::shared::MAX_ITEM_LEN;
-
-//#[path = "shared/lib_benches.rs"]
-mod lib_benches;
 
 pub fn bench_target(c: &mut Criterion) {
     let mut rng = Rng::new();

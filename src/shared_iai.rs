@@ -1,7 +1,6 @@
 // This file is used from various benches, and not all of them use all functionality from here. So,
 // some items have `#[allow(unused)]`.
 use super::outish::*;
-use crate::lib_benches::rnd::MIN_ITEMS_AFTER_REMOVING_DUPLICATES;
 use alloc::collections::BTreeSet;
 use cami::prelude::*;
 use core::marker::PhantomData;
@@ -90,10 +89,6 @@ pub fn data_out<
             let mut set = BTreeSet::<OutType>::new();
             set.extend(unsorted.drain(..));
             unsorted.extend(set.into_iter());
-
-            if unsorted.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
-                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {} 'own' items, and {unsorted_with_duplicates_len} generated ('out'). But, after removing duplicates, there was only {} items left! Re-run, change the limits, or investigate.", own_items.len(), unsorted.len());
-            }
         }
         unsorted
     };

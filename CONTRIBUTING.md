@@ -1,8 +1,6 @@
-# Module structure, and how to contribute
+# Contributing
 
-The module structure here is unusual:
-- `lib.rs` doesn't provide anything. And
-- benchmark scaffolding is in [benches/shared/lib_benches.rs](benches/shared/lib_benches.rs).
+The (reused parts of) benches themselves are not trivial. That's why we have [tests](tests) for them.
 
 If you use VS Code: [.vscode/settings.json](.vscode/settings.json) activates `fastrand` (currently
 the only randomness generator).

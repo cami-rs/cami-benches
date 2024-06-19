@@ -14,9 +14,6 @@ use lib_benches::outish::{OutCollectionSliceIndicator, OutIndicatorNonRefIndicat
 
 extern crate alloc;
 
-#[path = "lib_benches.rs"]
-mod lib_benches;
-
 pub fn bench_target(c: &mut Criterion) {
     let mut rng = Rng::new();
 

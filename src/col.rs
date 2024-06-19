@@ -1,4 +1,4 @@
-use crate::lib_benches::outish::{
+use crate::outish::{
     Out, OutCollRetriever, OutCollRetrieverCami, OutCollection, OutCollectionIndicator,
     OutIndicatorIndicator, OutRetriever,
 };

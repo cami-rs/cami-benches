@@ -1,5 +1,5 @@
-use crate::lib_benches::outish::Out;
-use crate::lib_benches::rnd::{data_own, RndChoice, MIN_ITEMS_AFTER_REMOVING_DUPLICATES};
+use crate::outish::Out;
+use crate::rnd::{data_own, RndChoice};
 use alloc::collections::BTreeSet;
 
 extern crate alloc;
@@ -32,10 +32,6 @@ impl<OwnType: 'static, OutType: Out + 'static> OwnAndOut<OwnType, OutType> {
             let mut set = BTreeSet::<OutType>::new();
             set.extend(out.drain(..));
             out.extend(set.into_iter());
-
-            if out.len() < MIN_ITEMS_AFTER_REMOVING_DUPLICATES {
-                panic!("Benchmarking requires min. of {MIN_ITEMS_AFTER_REMOVING_DUPLICATES} unduplicated items. There was {} 'own' items, and {len_including_duplicates} generated ('out'). But, after removing duplicates, there was only {} items left! Re-run, change the limits, or investigate.", own.len(), out.len());
-            }
         }
         let out = out.leak();
         Self { own, out }
