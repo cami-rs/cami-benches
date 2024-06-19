@@ -1,5 +1,5 @@
 use crate::outish::Out;
-use crate::rnd::{data_own, RndChoice};
+use crate::rnd::{data_own, Random};
 use alloc::collections::BTreeSet;
 
 extern crate alloc;
@@ -16,8 +16,8 @@ pub struct OwnAndOut<OwnType: 'static, OutType: Out + 'static> {
 }
 
 impl<OwnType: 'static, OutType: Out + 'static> OwnAndOut<OwnType, OutType> {
-    pub fn new(
-        generate_own_item: impl Fn(&mut RndChoice) -> OwnType,
+    pub fn new<Rnd: Random>(
+        generate_own_item: impl Fn(&mut Rnd) -> OwnType,
         generate_out_item: impl Fn(&'static OwnType) -> OutType,
         allows_multiple_equal_items: bool,
     ) -> Self {

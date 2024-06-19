@@ -88,7 +88,6 @@ dependencies = [
  "criterion",
  "fastrand",
  "iai-callgrind",
- "once_cell",
 ]
 
 [[package]]

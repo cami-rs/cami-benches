@@ -11,69 +11,57 @@ use cami_benches::{col, shared_iai};
 use core::iter;
 use fastrand::Rng;
 use iai_callgrind::{library_benchmark, library_benchmark_group, main, LibraryBenchmarkConfig};
-use once_cell::sync::OnceCell;
 
-type OwnType = String;
 type OutType = &'static str;
+type OutTypeRef = &'static [OutType];
 
-fn own_and_out() -> &'static OwnAndOut<OwnType, OutType> {
-    static OUT_AND_OWN: OnceCell<OwnAndOut<OwnType, OutType>> = OnceCell::new();
-    OUT_AND_OWN.get_or_init(|| {
-        eprintln!("own_and_out() generating owned & out data");
-        OwnAndOut::new(|rnd| rnd.string(), |string| &string[..], true)
-    })
-}
-
-fn own() -> &'static [OwnType] {
-    own_and_out().own
-}
-
-fn out() -> &'static [OutType] {
-    &own_and_out().out
+fn out() -> OutTypeRef {
+    let own_and_out = OwnAndOut::new(|rnd: &mut Rng| rnd.string(), |string| &string[..], true);
+    own_and_out.out
 }
 
 //------
 
 #[library_benchmark]
-#[bench::stable()]
-fn stable_lexi() -> OutCollectionVec<'static, &'static str> {
+#[bench::stable(out())]
+fn stable_lexi(out: OutTypeRef) -> OutCollectionVec<'static, &'static str> {
     core::hint::black_box(col::lexi_stable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()))
+    >(out))
 }
 
 #[library_benchmark]
-#[bench::stable()]
-fn stable_cami() -> OutCollectionVec<'static, Cami<&'static str>> {
+#[bench::stable(out())]
+fn stable_cami(out: OutTypeRef) -> OutCollectionVec<'static, Cami<&'static str>> {
     core::hint::black_box(col::cami_stable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()))
+    >(out))
 }
 //------
 
 #[library_benchmark]
-#[bench::unstable()]
-fn unstable_lexi() {
+#[bench::unstable(out())]
+fn unstable_lexi(out: OutTypeRef) {
     let _result: &Vec<&str> = core::hint::black_box(col::lexi_unstable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()))
+    >(out))
     .as_vec_ref();
 }
 
 #[library_benchmark]
-#[bench::unstable()]
-fn unstable_cami() {
+#[bench::unstable(out())]
+fn unstable_cami(out: OutTypeRef) {
     let _result: &Vec<Cami<&str>> = core::hint::black_box(col::cami_unstable::<
         &str,
         OutIndicatorStrIndicator,
         OutCollectionVecIndicator,
-    >(out()))
+    >(out))
     .as_vec_ref();
 }
 

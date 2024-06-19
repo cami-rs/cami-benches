@@ -5,19 +5,50 @@ use core::str::FromStr;
 use fastrand::Rng;
 
 /// Min number of test items (before removing duplicates).
-pub const MIN_ITEMS: usize = 500000;
+const MIN_ITEMS: usize = 1000;
+
 /// Max. number of test items.
-pub const MAX_ITEMS: usize = 5000000;
+const MAX_ITEMS: usize = 500000;
 
 /// Min length of an item (where an item itself is a [Vec], [String]...). For example, for String,
 /// this is the minimum number of `char`s - so the actual UTF-8 minimum length may be up to four
 /// times higher.
-pub const MIN_ITEM_LEN: usize = 1;
+const MIN_ITEM_LEN: usize = 1;
 
 /// Max length of an item (where an item itself is a [Vec], [String]...). For example, for String,
 /// this is the maximum number of `char`s - so the actual UTF-8 maximum length may be up to four
 /// times higher.
-pub const MAX_ITEM_LEN: usize = 1_000;
+const MAX_ITEM_LEN: usize = 1_000;
+
+/// Parse a decimal value from an environment variable. If not present, use `otherwise`.
+fn from_env_or(env_var_name: &str, otherwise: usize) -> usize {
+    let env = std::env::var(env_var_name);
+    if let Ok(st) = env {
+        let env = usize::from_str(&st);
+        if let Ok(env) = env {
+            return env;
+        }
+        panic!("Environment variable {env_var_name} should be a 64-bit unsigned integer in decimal representation, but received {st}.");
+    }
+    otherwise
+}
+
+pub const MIN_ITEMS_ENV: &str = "MIN_ITEMS";
+pub const MAX_ITEMS_ENV: &str = "MAX_ITEMS";
+pub const MIN_ITEM_LEN_ENV: &str = "MIN_ITEM_LEN";
+pub const MAX_ITEM_LEN_ENV: &str = "MAX_ITEM_LEN";
+fn min_items() -> usize {
+    from_env_or(MIN_ITEMS_ENV, MIN_ITEMS)
+}
+fn max_items() -> usize {
+    from_env_or(MAX_ITEMS_ENV, MAX_ITEMS)
+}
+fn min_item_len() -> usize {
+    from_env_or(MIN_ITEM_LEN_ENV, MIN_ITEM_LEN)
+}
+fn max_item_len() -> usize {
+    from_env_or(MAX_ITEM_LEN_ENV, MAX_ITEM_LEN)
+}
 
 //------
 
@@ -49,6 +80,7 @@ pub trait Random {
     fn string_for_range(&mut self, range: impl RangeBounds<usize>) -> String;
 }
 
+#[cfg(feature = "fastrand")]
 impl Random for Rng {
     fn with_seed_dec(seed: &str) -> Self {
         Rng::with_seed(u64::from_str(seed).expect("Environment variable RND_SEED_DEC should be a 64-bit unsigned integer in decimal representation."))
@@ -64,7 +96,7 @@ impl Random for Rng {
         Rng::usize(self, range)
     }
     fn string(&mut self) -> String {
-        self.string_for_range(MIN_ITEMS..MAX_ITEMS)
+        self.string_for_range(min_item_len()..max_item_len())
     }
     fn string_for_range(&mut self, range: impl RangeBounds<usize>) -> String {
         let num_chars = self.usize(range);
@@ -77,16 +109,16 @@ impl Random for Rng {
     }
 }
 
-pub const RND_SEED_DEC: &'static str = "RND_SEED_DEC";
-pub const RND_SEED_HEX: &'static str = "RND_SEED_HEX";
+pub const RND_SEED_DEC_ENV: &str = "RND_SEED_DEC";
+pub const RND_SEED_HEX_ENV: &str = "RND_SEED_HEX";
 
-pub fn data_own_for_rnd<OwnType, Rnd: Random>(
+pub fn data_own<OwnType, Rnd: Random>(
     generate_own_item: impl Fn(&mut Rnd) -> OwnType,
 ) -> Vec<OwnType> {
-    let seed_dec = std::env::var(RND_SEED_DEC);
-    let seed_hex = std::env::var(RND_SEED_HEX);
+    let seed_dec = std::env::var(RND_SEED_DEC_ENV);
+    let seed_hex = std::env::var(RND_SEED_HEX_ENV);
     if seed_dec.is_ok() && seed_hex.is_ok() {
-        panic!("You've provided both environment variables {RND_SEED_DEC}: {} and {RND_SEED_HEX}: {}, but this requires exactly one.", seed_dec.unwrap(), seed_hex.unwrap());
+        panic!("You've provided both environment variables {RND_SEED_DEC_ENV}: {} and {RND_SEED_HEX_ENV}: {}, but this requires exactly one.", seed_dec.unwrap(), seed_hex.unwrap());
     }
     let mut rnd = if let Ok(dec) = seed_dec {
         Rnd::with_seed_dec(&dec)
@@ -96,7 +128,7 @@ pub fn data_own_for_rnd<OwnType, Rnd: Random>(
         panic!("Requiring exactly one of two environment variables RND_SEED_DEC, RND_SEED_HEX, but received none.");
     };
 
-    let num_items = rnd.usize(MIN_ITEMS..MAX_ITEMS);
+    let num_items = rnd.usize(min_items()..max_items());
     let mut own_items = Vec::with_capacity(num_items);
 
     for _ in 0..num_items {
@@ -104,14 +136,4 @@ pub fn data_own_for_rnd<OwnType, Rnd: Random>(
         own_items.push(item);
     }
     own_items
-}
-
-#[cfg(feature = "fastrand")]
-pub type RndChoice = Rng;
-
-#[cfg(not(feature = "fastrand"))]
-compile_error!("Currently we require 'fastrand' feature.");
-
-pub fn data_own<OwnType>(generate_own_item: impl Fn(&mut RndChoice) -> OwnType) -> Vec<OwnType> {
-    data_own_for_rnd::<OwnType, RndChoice>(generate_own_item)
 }
