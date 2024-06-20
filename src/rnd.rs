@@ -1,3 +1,4 @@
+use crate::data::Data;
 use core::num;
 use core::ops::RangeBounds;
 use core::str::FromStr;
@@ -52,13 +53,16 @@ fn max_item_len() -> usize {
 
 //------
 
+pub const RND_SEED_DEC_ENV: &str = "RND_SEED_DEC";
+pub const RND_SEED_HEX_ENV: &str = "RND_SEED_HEX";
+
 /// We create one instance per set of compared benchmarks. We don't re-use the same instance for all
 /// benchmarks, because we'd need mutable access to such instance, and that's tricky with
 /// `iai-callgrind`'s, `Criterion`'s or other harness's macros. That would prevent benchmarking in
 /// parallel.
 ///
 /// Therefore we require the user to provide a seed.
-pub trait Random {
+pub trait Random: Data + Sized {
     /// Initiate with a seed. The seed is parsed from `seed`, which is in decimal representation.
     /// (It comes from environment variable `RND_SEED_DEC`).
     ///
@@ -72,23 +76,27 @@ pub trait Random {
     /// `u64`'s separated by whitespace, or other.)
     fn with_seed_hex(seed: &str) -> Self;
 
-    fn u8(&mut self, range: impl RangeBounds<u8>) -> u8;
-    fn usize(&mut self, range: impl RangeBounds<usize>) -> usize;
-    fn string(&mut self) -> String;
-    /// Param `range` is a range of length of the result [String], however, NOT in bytes, but in
-    /// CHARACTERS.
-    fn string_for_range(&mut self, range: impl RangeBounds<usize>) -> String;
+    /// Initiate with a seed, by default from an environment variable `RND_SEED_DEC` or
+    /// `RND_SEED_HEX` - see [Random::with_seed_dec] and [Random::with_seed_hex]. Override this only
+    /// for tests or special.
+    fn with_seed() -> Self {
+        let seed_dec = std::env::var(RND_SEED_DEC_ENV);
+        let seed_hex = std::env::var(RND_SEED_HEX_ENV);
+        if seed_dec.is_ok() && seed_hex.is_ok() {
+            panic!("You've provided both environment variables {RND_SEED_DEC_ENV}: {} and {RND_SEED_HEX_ENV}: {}, but this requires exactly one.", seed_dec.unwrap(), seed_hex.unwrap());
+        }
+        if let Ok(dec) = seed_dec {
+            Self::with_seed_dec(&dec)
+        } else if let Ok(hex) = seed_hex {
+            Self::with_seed_hex(&hex)
+        } else {
+            panic!("Requiring exactly one of two environment variables RND_SEED_DEC, RND_SEED_HEX, but received none.");
+        }
+    }
 }
 
 #[cfg(feature = "fastrand")]
-impl Random for Rng {
-    fn with_seed_dec(seed: &str) -> Self {
-        Rng::with_seed(u64::from_str(seed).expect("Environment variable RND_SEED_DEC should be a 64-bit unsigned integer in decimal representation."))
-    }
-    fn with_seed_hex(seed: &str) -> Self {
-        Rng::with_seed(u64::from_str_radix(seed, 16).expect("Environment variable RND_SEED_HEX should be a 64-bit unsigned integer in hexadecimal representation."))
-    }
-
+impl Data for Rng {
     fn u8(&mut self, range: impl RangeBounds<u8>) -> u8 {
         Rng::u8(self, range)
     }
@@ -109,30 +117,24 @@ impl Random for Rng {
     }
 }
 
-pub const RND_SEED_DEC_ENV: &str = "RND_SEED_DEC";
-pub const RND_SEED_HEX_ENV: &str = "RND_SEED_HEX";
-
-pub fn data_own<OwnType, Rnd: Random>(
-    generate_own_item: impl Fn(&mut Rnd) -> OwnType,
-) -> Vec<OwnType> {
-    let seed_dec = std::env::var(RND_SEED_DEC_ENV);
-    let seed_hex = std::env::var(RND_SEED_HEX_ENV);
-    if seed_dec.is_ok() && seed_hex.is_ok() {
-        panic!("You've provided both environment variables {RND_SEED_DEC_ENV}: {} and {RND_SEED_HEX_ENV}: {}, but this requires exactly one.", seed_dec.unwrap(), seed_hex.unwrap());
+#[cfg(feature = "fastrand")]
+impl Random for Rng {
+    fn with_seed_dec(seed: &str) -> Self {
+        Rng::with_seed(u64::from_str(seed).expect("Environment variable RND_SEED_DEC should be a 64-bit unsigned integer in decimal representation."))
     }
-    let mut rnd = if let Ok(dec) = seed_dec {
-        Rnd::with_seed_dec(&dec)
-    } else if let Ok(hex) = seed_hex {
-        Rnd::with_seed_hex(&hex)
-    } else {
-        panic!("Requiring exactly one of two environment variables RND_SEED_DEC, RND_SEED_HEX, but received none.");
-    };
+    fn with_seed_hex(seed: &str) -> Self {
+        Rng::with_seed(u64::from_str_radix(seed, 16).expect("Environment variable RND_SEED_HEX should be a 64-bit unsigned integer in hexadecimal representation."))
+    }
+}
 
+pub fn data_own<OwnType, DataImpl: Data>(
+    rnd: &mut DataImpl, generate_own_item: impl Fn(&mut DataImpl) -> OwnType,
+) -> Vec<OwnType> {
     let num_items = rnd.usize(min_items()..max_items());
     let mut own_items = Vec::with_capacity(num_items);
 
     for _ in 0..num_items {
-        let item = generate_own_item(&mut rnd);
+        let item = generate_own_item(rnd);
         own_items.push(item);
     }
     own_items

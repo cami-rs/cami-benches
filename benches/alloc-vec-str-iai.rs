@@ -4,9 +4,8 @@
 #![feature(trait_alias)]
 
 use cami::prelude::*;
-use cami_benches::data::OwnAndOut;
+use cami_benches::data::{Data, OwnAndOut,  self};
 use cami_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
-use cami_benches::rnd::Random;
 use cami_benches::{col, shared_iai};
 use core::iter;
 use fastrand::Rng;
@@ -17,6 +16,7 @@ type OutTypeRef = &'static [OutType];
 
 fn out() -> OutTypeRef {
     let own_and_out = OwnAndOut::new(|rnd: &mut Rng| rnd.string(), |string| &string[..], true);
+    //data::purge_cache();
     own_and_out.out
 }
 

@@ -42,7 +42,7 @@ required-features = ["alloc", "criterion"]
 [[bench]]
 name = "alloc-vec-str-iai"
 harness = false
-required-features = ["alloc"]
+required-features = ["iai-callgrind", "fastrand", "alloc"]
 
 [[bench]]
 name = "alloc-vec-str-criterion"
@@ -68,9 +68,6 @@ required-features = ["alloc", "criterion"]
 name = "stack-slice-u8"
 harness = false
 required-features = ["criterion"]
-
-[[tests]]
-name = "01"
 
 [lints.rust]
 warnings = "allow"

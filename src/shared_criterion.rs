@@ -196,7 +196,7 @@ pub fn bench_vec_sort_bin_search_ref<
                     })
                 },
             );
-            purge_cache(rnd);
+            purge_cache();
             group.bench_with_input(
                 BenchmarkId::new("std bin search (lexi)   ", id_string.clone()),
                 hint::black_box(&unsorted_items),
@@ -211,7 +211,7 @@ pub fn bench_vec_sort_bin_search_ref<
             );
         }
         {
-            purge_cache(rnd);
+            purge_cache();
             // @TODO cfg
             //
             //#[cfg(not(feature = "transmute"))]
@@ -254,7 +254,7 @@ pub fn bench_vec_sort_bin_search_ref<
                     })
                 },
             );
-            purge_cache(rnd);
+            purge_cache();
             group.bench_with_input(
                 BenchmarkId::new("std bin search (non-lexi)", id_string),
                 hint::black_box(&unsorted_items),

@@ -1,8 +1,30 @@
 use crate::outish::Out;
 use crate::rnd::{data_own, Random};
 use alloc::collections::BTreeSet;
+use core::ops::RangeBounds;
 
 extern crate alloc;
+
+/*const MAX_CACHE_SIZE: usize = 10_000_000;
+
+pub fn purge_cache() {
+    let mut vec = Vec::<u8>::with_capacity(MAX_CACHE_SIZE);
+
+    for _ in [0..MAX_CACHE_SIZE] {
+        vec.push(core::hint::black_box(1));
+    }
+    core::hint::black_box(vec);
+}*/
+
+pub trait Data: Sized {
+    fn u8(&mut self, range: impl RangeBounds<u8>) -> u8;
+    fn usize(&mut self, range: impl RangeBounds<usize>) -> usize;
+    fn string(&mut self) -> String;
+    /// Param `range` is a range of length of the result [String], however, NOT in bytes, but in
+    /// CHARACTERS.
+    fn string_for_range(&mut self, range: impl RangeBounds<usize>) -> String;
+    //fn strings
+}
 
 /// Stores (static, leaked) "own" & "out" data, where "out" potentially borrows from "own". When an
 /// instance (of this struct) is stored in a (`static`) [once_cell::sync::OnceCell], these two

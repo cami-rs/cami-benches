@@ -11,14 +11,6 @@ use std::str::FromStr;
 
 extern crate alloc;
 
-/*pub fn purge_cache() {
-    let mut vec = Vec::<u8>::with_capacity(MAX_CACHE_SIZE);
-
-    for _ in [0..MAX_CACHE_SIZE] {
-        vec.push(core::hint::black_box(1));
-    }
-    core::hint::black_box(vec);
-}*/
 //------
 
 //------

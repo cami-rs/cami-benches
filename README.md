@@ -51,7 +51,7 @@ Relevant features:
 
 Invoke `cargo bench` or `cargo check --benches` like:
 ```bash
-cargo check --bench stack-slice-u8     --features fastrand
+cargo check --bench stack-slice-u8     --features iai-callgrind,fastrand
 cargo check --bench stack-slice-u8     --features fastrand,deref_pure
 cargo bench --bench stack-slice-u8     --features fastrand
 cargo bench --bench stack-slice-u8     --features fastrand,deref_pure
@@ -89,3 +89,5 @@ cargo bench                            --features fastrand,alloc,deref_pure
 
 `alloc` is required by the benches. But, because `alloc` is not a default feature in `cami`, those
 benches won't be run until you specify it.
+
+## 
