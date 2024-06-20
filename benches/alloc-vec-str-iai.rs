@@ -4,7 +4,7 @@
 #![feature(trait_alias)]
 
 use cami::prelude::*;
-use cami_benches::data::{Data, OwnAndOut,  self};
+use cami_benches::data::{self, Data, OwnAndOut};
 use cami_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
 use cami_benches::{col, shared_iai};
 use core::iter;

@@ -43,7 +43,21 @@ impl<OwnType: 'static, OutType: Out + 'static> OwnAndOut<OwnType, OutType> {
         generate_out_item: impl Fn(&'static OwnType) -> OutType,
         allows_multiple_equal_items: bool,
     ) -> Self {
-        let own = data_own(generate_own_item).leak();
+        Self::new_for(
+            &mut Rnd::with_seed(),
+            generate_own_item,
+            generate_out_item,
+            allows_multiple_equal_items,
+        )
+    }
+
+    pub fn new_for<DataImpl: Data>(
+        data: &mut DataImpl,
+        generate_own_item: impl Fn(&mut DataImpl) -> OwnType,
+        generate_out_item: impl Fn(&'static OwnType) -> OutType,
+        allows_multiple_equal_items: bool,
+    ) -> Self {
+        let own = data_own(data, generate_own_item).leak();
 
         let mut out: Vec<OutType> = Vec::<OutType>::with_capacity(own.len());
         out.extend(own.iter().map(generate_out_item));

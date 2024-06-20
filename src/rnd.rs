@@ -128,7 +128,8 @@ impl Random for Rng {
 }
 
 pub fn data_own<OwnType, DataImpl: Data>(
-    rnd: &mut DataImpl, generate_own_item: impl Fn(&mut DataImpl) -> OwnType,
+    rnd: &mut DataImpl,
+    generate_own_item: impl Fn(&mut DataImpl) -> OwnType,
 ) -> Vec<OwnType> {
     let num_items = rnd.usize(min_items()..max_items());
     let mut own_items = Vec::with_capacity(num_items);
