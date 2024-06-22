@@ -49,6 +49,9 @@ pub trait Random: Data + Sized {
 
 #[cfg(feature = "fastrand")]
 impl Data for Rng {
+    fn u8(&mut self, range: Range<u8>) -> u8 {
+        Rng::u8(self, range)
+    }
     fn char(&mut self) -> char {
         Rng::alphanumeric(self)
     }
@@ -57,11 +60,12 @@ impl Data for Rng {
     }
 }
 
-impl DataItems for Rng {
+impl DataItems for Rng {}
+/*
     fn num_items(&mut self) -> usize {
         self.usize(data::min_items()..data::max_items())
     }
-}
+}*/
 
 #[cfg(feature = "fastrand")]
 impl Random for Rng {
