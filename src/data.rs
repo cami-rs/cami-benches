@@ -1,7 +1,7 @@
 use crate::outish::Out;
 use crate::rnd::{self, Random};
 use alloc::collections::BTreeSet;
-use core::ops::RangeBounds;
+use core::ops::Range;
 use core::str::FromStr;
 
 extern crate alloc;
@@ -17,15 +17,33 @@ pub fn purge_cache() {
     core::hint::black_box(vec);
 }*/
 
+pub trait OptAsData {
+    fn as_data(&mut self) -> &mut dyn Data {
+        panic!("");
+    }
+}
+
+pub trait DataItems: OptAsData {
+    fn num_items(&mut self) -> usize {
+        self.as_data().usize(min_items()..max_items())
+    }
+}
+
+impl<T: Data> OptAsData for T {
+    fn as_data(&mut self) -> &mut dyn Data {
+        self
+    }
+}
+
 /// All default implementations of functions [panic].
-pub trait Data: Sized {
-    fn u8(&mut self, range: impl RangeBounds<u8>) -> u8 {
+pub trait Data: DataItems {
+    fn u8(&mut self, range: Range<u8>) -> u8 {
         unimplemented!()
     }
     fn char(&mut self) -> char {
         unimplemented!()
     }
-    fn usize(&mut self, range: impl RangeBounds<usize>) -> usize {
+    fn usize(&mut self, range: Range<usize>) -> usize {
         unimplemented!()
     }
     fn string(&mut self) -> String {
@@ -33,7 +51,7 @@ pub trait Data: Sized {
     }
     /// Param `range` is a range of length of the result [String], however, NOT in bytes, but in
     /// CHARACTERS.
-    fn string_for_len_range(&mut self, range: impl RangeBounds<usize>) -> String {
+    fn string_for_len_range(&mut self, range: Range<usize>) -> String {
         let num_chars = self.usize(range);
         let mut result = String::with_capacity(4 * num_chars);
         for _ in 0..num_chars {
@@ -41,9 +59,6 @@ pub trait Data: Sized {
         }
         result.shrink_to_fit();
         result
-    }
-    fn num_items(&mut self) -> usize {
-        self.usize(min_items()..max_items())
     }
 }
 //--------
@@ -81,10 +96,10 @@ const MIN_ITEMS_ENV: &str = "MIN_ITEMS";
 const MAX_ITEMS_ENV: &str = "MAX_ITEMS";
 const MIN_ITEM_LEN_ENV: &str = "MIN_ITEM_LEN";
 const MAX_ITEM_LEN_ENV: &str = "MAX_ITEM_LEN";
-fn min_items() -> usize {
+pub fn min_items() -> usize {
     from_env_or(MIN_ITEMS_ENV, MIN_ITEMS)
 }
-fn max_items() -> usize {
+pub fn max_items() -> usize {
     from_env_or(MAX_ITEMS_ENV, MAX_ITEMS)
 }
 fn min_item_len() -> usize {

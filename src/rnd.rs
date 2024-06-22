@@ -1,6 +1,6 @@
-use crate::data::Data;
+use crate::data::{self, Data, DataItems};
 use core::num;
-use core::ops::RangeBounds;
+use core::ops::Range;
 use core::str::FromStr;
 #[cfg(feature = "fastrand")]
 use fastrand::Rng;
@@ -52,8 +52,14 @@ impl Data for Rng {
     fn char(&mut self) -> char {
         Rng::alphanumeric(self)
     }
-    fn usize(&mut self, range: impl RangeBounds<usize>) -> usize {
+    fn usize(&mut self, range: Range<usize>) -> usize {
         Rng::usize(self, range)
+    }
+}
+
+impl DataItems for Rng {
+    fn num_items(&mut self) -> usize {
+        self.usize(data::min_items()..data::max_items())
     }
 }
 

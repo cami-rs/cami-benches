@@ -1,4 +1,4 @@
-use crate::data::Data;
+use crate::data::{Data, DataItems, OptAsData};
 use alloc::vec::IntoIter;
 
 extern crate alloc;
@@ -6,10 +6,16 @@ extern crate alloc;
 #[repr(transparent)]
 pub struct DataTest<T>(IntoIter<T>);
 
-impl Data for DataTest<String> {
+impl<T> DataItems for DataTest<T>
+where
+    DataTest<T>: OptAsData,
+{
     fn num_items(&mut self) -> usize {
         self.0.len()
     }
+}
+
+impl Data for DataTest<String> {
     fn string(&mut self) -> String {
         self.0.next().unwrap()
     }
