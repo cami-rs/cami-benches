@@ -3,7 +3,7 @@
 #![feature(thread_id_value)]
 #![feature(trait_alias)]
 
-use cami::prelude::*;
+use cami::prelude::Cami;
 use cami_benches::data::{self, Data, OwnAndOut};
 use cami_benches::outish::{OutCollectionVec, OutCollectionVecIndicator, OutIndicatorStrIndicator};
 use cami_benches::{col, shared_iai};
@@ -15,7 +15,8 @@ type OutType = &'static str;
 type OutTypeRef = &'static [OutType];
 
 fn out() -> OutTypeRef {
-    let own_and_out = OwnAndOut::new(|rnd: &mut Rng| rnd.string(), |string| &string[..], true);
+    let own_and_out =
+        OwnAndOut::new_for_rnd(|rnd: &mut Rng| rnd.string(), |string| &string[..], true);
     //data::purge_cache();
     own_and_out.out
 }

@@ -1,33 +1,22 @@
-use core::ops::{Coroutine, CoroutineState};
-use core::pin::Pin;
+use crate::data::Data;
+use alloc::vec::IntoIter;
 
-fn main() {
-    let mut generator = #[coroutine]
-    || {
-        println!("Before yield 1");
-        yield 1;
-        println!("Before yield 2");
-        yield 2;
-        println!("Before return");
-        return "foo";
-    };
+extern crate alloc;
 
-    match Pin::new(&mut generator).resume(()) {
-        CoroutineState::Yielded(1) => {
-            println!("Yielded 1");
-        }
-        _ => panic!("unexpected value from resume"),
+#[repr(transparent)]
+pub struct DataTest<T>(IntoIter<T>);
+
+impl Data for DataTest<String> {
+    fn num_items(&mut self) -> usize {
+        self.0.len()
     }
-    match Pin::new(&mut generator).resume(()) {
-        CoroutineState::Yielded(2) => {
-            println!("Yielded 2");
-        }
-        _ => panic!("unexpected value from resume"),
+    fn string(&mut self) -> String {
+        self.0.next().unwrap()
     }
-    match Pin::new(&mut generator).resume(()) {
-        CoroutineState::Complete("foo") => {
-            println!("Returned foo");
-        }
-        _ => panic!("unexpected value from resume"),
+}
+
+impl<T> DataTest<T> {
+    pub fn new(vec: Vec<T>) -> Self {
+        Self(vec.into_iter())
     }
 }
